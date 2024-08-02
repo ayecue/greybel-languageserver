@@ -1,0 +1,11 @@
+.DS_Store
+node_modules
+out
+dist
+test.src
+node_modules
+system.pem
+test.ts
+test.js
+testing.src
+testing2.src
