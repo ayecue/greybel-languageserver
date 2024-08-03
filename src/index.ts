@@ -1,26 +1,13 @@
-import {
-  createConnection,
-  InitializeParams,
-  InitializeResult,
-  TextDocumentSyncKind
-} from 'vscode-languageserver/node';
 import { activate as activateAutocomplete } from './features/autocomplete';
-import context from './helper/context';
+import { Context } from './context';
+import documentManager from './helper/document-manager';
 
-context.connection.onInitialize((params: InitializeParams) => {
-  const capabilities = params.capabilities;
-  const result: InitializeResult = {
-    textDocumentSync: TextDocumentSyncKind.Incremental,
-    capabilities: {
-      completionProvider: {
-        resolveProvider: true
-      }
-    }
-  };
+const context = new Context();
 
-  return result;
+documentManager.setContext(context);
+
+context.on('ready', (ctx) => {
+  activateAutocomplete(ctx);
 });
-
-activateAutocomplete(context);
 
 context.listen();

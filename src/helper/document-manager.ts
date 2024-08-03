@@ -2,18 +2,14 @@ import EventEmitter from 'events';
 import { ASTChunkGreyScript, Parser } from 'greyscript-core';
 import LRU from 'lru-cache';
 import { ASTBaseBlockWithScope } from 'miniscript-core';
-import { TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 
-import context from '../helper/context';
+import { IContext } from '../types';
 import typeManager from './type-manager';
 
-export const internalDocumentManager: TextDocuments<TextDocument> =
-  new TextDocuments(TextDocument);
-
 export interface ActiveDocumentOptions {
-  documentManager: DocumentParseQueue;
+  documentManager: DocumentManager;
   content: string;
   textDocument: TextDocument;
   document: ASTBaseBlockWithScope | null;
@@ -21,7 +17,7 @@ export interface ActiveDocumentOptions {
 }
 
 export class ActiveDocument {
-  documentManager: DocumentParseQueue;
+  documentManager: DocumentManager;
   content: string;
   textDocument: TextDocument;
   document: ASTBaseBlockWithScope | null;
@@ -48,6 +44,7 @@ export class ActiveDocument {
 
     const rootChunk = this.document as ASTChunkGreyScript;
     const rootPath = Utils.joinPath(URI.parse(this.textDocument.uri), '..');
+    const context = this.documentManager.context;
     const workspacePath = context.getWorkspaceFolderUris()[0];
     const nativeImports = rootChunk.nativeImports
       .filter((nativeImport) => nativeImport.directory)
@@ -147,15 +144,26 @@ export interface QueueItem {
 export const DOCUMENT_PARSE_QUEUE_INTERVAL = 1000;
 export const DOCUMENT_PARSE_QUEUE_PARSE_TIMEOUT = 2500;
 
-export class DocumentParseQueue extends EventEmitter {
-  results: LRU<string, ActiveDocument>;
+export class DocumentManager extends EventEmitter {
+  readonly results: LRU<string, ActiveDocument>;
 
+  private _context: IContext | null;
   private queue: Map<string, QueueItem>;
   private interval: NodeJS.Timeout | null;
   private readonly parseTimeout: number;
 
+  get context() {
+    return this._context;
+  }
+
+  setContext(context: IContext) {
+    this._context = context;
+    return this;
+  }
+
   constructor(parseTimeout: number = DOCUMENT_PARSE_QUEUE_PARSE_TIMEOUT) {
     super();
+    this._context = null;
     this.results = new LRU({
       ttl: 1000 * 60 * 20,
       ttlAutopurge: true
@@ -258,7 +266,7 @@ export class DocumentParseQueue extends EventEmitter {
 
   async open(target: string): Promise<ActiveDocument | null> {
     try {
-      const textDocument = await internalDocumentManager.get(target);
+      const textDocument = await this.context.textDocumentManager.get(target);
       return this.get(textDocument);
     } catch (err) {
       return null;
@@ -303,4 +311,4 @@ export class DocumentParseQueue extends EventEmitter {
   }
 }
 
-export default new DocumentParseQueue();
+export default new DocumentManager();

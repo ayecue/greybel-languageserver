@@ -6,11 +6,10 @@ import {
 import { CompletionItem as EntityCompletionItem } from 'miniscript-type-analyzer';
 import {
   CompletionItem,
-  createConnection,
   TextDocumentPositionParams
 } from 'vscode-languageserver/node';
 
-import { Context } from '../helper/context';
+import { Context } from '../context';
 import documentManager from '../helper/document-manager';
 import { getCompletionItemKind } from '../helper/kind';
 import { LookupHelper } from '../helper/lookup-type';

@@ -19,7 +19,7 @@ import {
 import { Position, TextDocument } from 'vscode-languageserver-textdocument';
 
 import * as ASTScraper from './ast-scraper';
-import documentParseQueue from './document-manager';
+import documentManager from './document-manager';
 import typeManager, { lookupBase } from './type-manager';
 
 export async function buildTypeDocument(
@@ -41,7 +41,7 @@ export async function buildTypeDocument(
   }
 
   const externalTypeDocs = [];
-  const allImports = await documentParseQueue.get(document).getImports();
+  const allImports = await documentManager.get(document).getImports();
 
   await Promise.all(
     allImports.map(async (item) => {
@@ -172,7 +172,7 @@ export class LookupHelper {
 
   lookupAST(position: Position): LookupASTResult | null {
     const me = this;
-    const chunk = documentParseQueue.get(me.document).document as ASTChunk;
+    const chunk = documentManager.get(me.document).document as ASTChunk;
     const lineItems = chunk.lines.get(position.line + 1);
 
     if (!lineItems) {
