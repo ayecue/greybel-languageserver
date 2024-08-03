@@ -6,13 +6,13 @@ import { TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 
-import { tryToGetPath } from './fs';
+import context from '../helper/context';
 import typeManager from './type-manager';
 
 export const internalDocumentManager: TextDocuments<TextDocument> =
   new TextDocuments(TextDocument);
 
-export interface ParseResultOptions {
+export interface ActiveDocumentOptions {
   documentManager: DocumentParseQueue;
   content: string;
   textDocument: TextDocument;
@@ -20,7 +20,7 @@ export interface ParseResultOptions {
   errors: Error[];
 }
 
-export class ParseResult {
+export class ActiveDocument {
   documentManager: DocumentParseQueue;
   content: string;
   textDocument: TextDocument;
@@ -29,7 +29,7 @@ export class ParseResult {
 
   private dependencies?: string[];
 
-  constructor(options: ParseResultOptions) {
+  constructor(options: ActiveDocumentOptions) {
     this.documentManager = options.documentManager;
     this.content = options.content;
     this.textDocument = options.textDocument;
@@ -48,31 +48,52 @@ export class ParseResult {
 
     const rootChunk = this.document as ASTChunkGreyScript;
     const rootPath = Utils.joinPath(URI.parse(this.textDocument.uri), '..');
+    const workspacePath = context.getWorkspaceFolderUris()[0];
     const nativeImports = rootChunk.nativeImports
       .filter((nativeImport) => nativeImport.directory)
-      .map((nativeImport) =>
-        Utils.joinPath(rootPath, nativeImport.directory).toString()
-      );
+      .map((nativeImport) => {
+        if (nativeImport.directory.startsWith('/')) {
+          return Utils.joinPath(
+            workspacePath,
+            nativeImport.directory
+          ).toString();
+        }
+        return Utils.joinPath(rootPath, nativeImport.directory).toString();
+      });
     const importsAndIncludes = [
       ...rootChunk.imports
         .filter((nonNativeImport) => nonNativeImport.path)
         .map((nonNativeImport) => {
-          const target = Utils.joinPath(rootPath, nonNativeImport.path);
-          const altTarget = Utils.joinPath(
-            rootPath,
-            `${nonNativeImport.path}.src`
+          if (nonNativeImport.path.startsWith('/')) {
+            return context.findExistingPath(
+              Utils.joinPath(workspacePath, nonNativeImport.path).toString(),
+              Utils.joinPath(
+                workspacePath,
+                `${nonNativeImport.path}.src`
+              ).toString()
+            );
+          }
+          return context.findExistingPath(
+            Utils.joinPath(rootPath, nonNativeImport.path).toString(),
+            Utils.joinPath(rootPath, `${nonNativeImport.path}.src`).toString()
           );
-          return tryToGetPath(target.toString(), altTarget.toString());
         }),
       ...rootChunk.includes
         .filter((includeImport) => includeImport.path)
         .map((includeImport) => {
-          const target = Utils.joinPath(rootPath, includeImport.path);
-          const altTarget = Utils.joinPath(
-            rootPath,
-            `${includeImport.path}.src`
+          if (includeImport.path.startsWith('/')) {
+            return context.findExistingPath(
+              Utils.joinPath(workspacePath, includeImport.path).toString(),
+              Utils.joinPath(
+                workspacePath,
+                `${includeImport.path}.src`
+              ).toString()
+            );
+          }
+          return context.findExistingPath(
+            Utils.joinPath(rootPath, includeImport.path).toString(),
+            Utils.joinPath(rootPath, `${includeImport.path}.src`).toString()
           );
-          return tryToGetPath(target.toString(), altTarget.toString());
         })
     ];
     const dependencies: Set<string> = new Set([
@@ -85,14 +106,14 @@ export class ParseResult {
     return this.dependencies;
   }
 
-  async getImports(): Promise<ParseResult[]> {
+  async getImports(): Promise<ActiveDocument[]> {
     if (this.document == null) {
       return [];
     }
 
-    const imports: Set<ParseResult> = new Set();
+    const imports: Set<ActiveDocument> = new Set();
     const visited: Set<string> = new Set([this.textDocument.uri]);
-    const traverse = async (rootResult: ParseResult) => {
+    const traverse = async (rootResult: ActiveDocument) => {
       const dependencies = await rootResult.getDependencies();
 
       for (const dependency of dependencies) {
@@ -127,7 +148,7 @@ export const DOCUMENT_PARSE_QUEUE_INTERVAL = 1000;
 export const DOCUMENT_PARSE_QUEUE_PARSE_TIMEOUT = 2500;
 
 export class DocumentParseQueue extends EventEmitter {
-  results: LRU<string, ParseResult>;
+  results: LRU<string, ActiveDocument>;
 
   private queue: Map<string, QueueItem>;
   private interval: NodeJS.Timeout | null;
@@ -157,7 +178,7 @@ export class DocumentParseQueue extends EventEmitter {
     }
   }
 
-  refresh(document: TextDocument): ParseResult {
+  refresh(document: TextDocument): ActiveDocument {
     const key = document.uri;
 
     if (!this.queue.has(key) && this.results.has(key)) {
@@ -172,7 +193,7 @@ export class DocumentParseQueue extends EventEmitter {
     return result;
   }
 
-  private create(document: TextDocument): ParseResult {
+  private create(document: TextDocument): ActiveDocument {
     const content = document.getText();
     const parser = new Parser(content, {
       unsafe: true
@@ -182,7 +203,7 @@ export class DocumentParseQueue extends EventEmitter {
     if (chunk.body?.length > 0) {
       typeManager.analyze(document.uri, chunk);
 
-      return new ParseResult({
+      return new ActiveDocument({
         documentManager: this,
         content,
         textDocument: document,
@@ -197,7 +218,7 @@ export class DocumentParseQueue extends EventEmitter {
 
       typeManager.analyze(document.uri, strictChunk);
 
-      return new ParseResult({
+      return new ActiveDocument({
         documentManager: this,
         content,
         textDocument: document,
@@ -205,7 +226,7 @@ export class DocumentParseQueue extends EventEmitter {
         errors: []
       });
     } catch (err: any) {
-      return new ParseResult({
+      return new ActiveDocument({
         documentManager: this,
         content,
         textDocument: document,
@@ -235,7 +256,7 @@ export class DocumentParseQueue extends EventEmitter {
     return true;
   }
 
-  async open(target: string): Promise<ParseResult | null> {
+  async open(target: string): Promise<ActiveDocument | null> {
     try {
       const textDocument = await internalDocumentManager.get(target);
       return this.get(textDocument);
@@ -244,11 +265,14 @@ export class DocumentParseQueue extends EventEmitter {
     }
   }
 
-  get(document: TextDocument): ParseResult {
+  get(document: TextDocument): ActiveDocument {
     return this.results.get(document.uri) || this.refresh(document);
   }
 
-  next(document: TextDocument, timeout: number = 5000): Promise<ParseResult> {
+  next(
+    document: TextDocument,
+    timeout: number = 5000
+  ): Promise<ActiveDocument> {
     const me = this;
 
     if (me.queue.has(document.uri)) {
