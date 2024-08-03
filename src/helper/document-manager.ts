@@ -45,13 +45,13 @@ export class ActiveDocument {
     const rootChunk = this.document as ASTChunkGreyScript;
     const rootPath = Utils.joinPath(URI.parse(this.textDocument.uri), '..');
     const context = this.documentManager.context;
-    const workspacePath = context.getWorkspaceFolderUris()[0];
+    const workspacePaths = await context.getWorkspaceFolderUris();
     const nativeImports = rootChunk.nativeImports
       .filter((nativeImport) => nativeImport.directory)
       .map((nativeImport) => {
         if (nativeImport.directory.startsWith('/')) {
           return Utils.joinPath(
-            workspacePath,
+            workspacePaths[0],
             nativeImport.directory
           ).toString();
         }
@@ -63,9 +63,12 @@ export class ActiveDocument {
         .map((nonNativeImport) => {
           if (nonNativeImport.path.startsWith('/')) {
             return context.findExistingPath(
-              Utils.joinPath(workspacePath, nonNativeImport.path).toString(),
               Utils.joinPath(
-                workspacePath,
+                workspacePaths[0],
+                nonNativeImport.path
+              ).toString(),
+              Utils.joinPath(
+                workspacePaths[0],
                 `${nonNativeImport.path}.src`
               ).toString()
             );
@@ -80,9 +83,9 @@ export class ActiveDocument {
         .map((includeImport) => {
           if (includeImport.path.startsWith('/')) {
             return context.findExistingPath(
-              Utils.joinPath(workspacePath, includeImport.path).toString(),
+              Utils.joinPath(workspacePaths[0], includeImport.path).toString(),
               Utils.joinPath(
-                workspacePath,
+                workspacePaths[0],
                 `${includeImport.path}.src`
               ).toString()
             );

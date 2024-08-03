@@ -10,7 +10,7 @@ export interface IContext extends EventEmitter {
   readonly connection: ReturnType<typeof createConnection>;
   readonly textDocumentManager: TextDocuments<TextDocument>;
 
-  getWorkspaceFolderUris(): URI[];
+  getWorkspaceFolderUris(): Promise<URI[]>;
   findExistingPath(...uris: string[]): string;
   readFile(targetUri: string): string;
   listen(): Promise<void>;

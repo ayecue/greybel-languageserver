@@ -1,6 +1,5 @@
 import crlf, { LF } from 'crlf-normalize';
 import EventEmitter from 'events';
-import fs from 'fs';
 // @ts-ignore: No type definitions
 import { TextDecoderLite as TextDecoder } from 'text-encoder-lite';
 import {
@@ -19,8 +18,6 @@ import { IContext, IContextFeatures } from './types';
 export class Context extends EventEmitter implements IContext {
   readonly connection: ReturnType<typeof createConnection>;
   readonly textDocumentManager: TextDocuments<TextDocument>;
-
-  private _workspaceFolderUris: Set<string>;
   private _features: IContextFeatures;
 
   constructor() {
@@ -32,7 +29,6 @@ export class Context extends EventEmitter implements IContext {
     this.textDocumentManager = new TextDocuments(
       TextDocument
     );
-    this._workspaceFolderUris = new Set();
     this._features = {
       configuration: false,
       workspaceFolder: false,
@@ -40,15 +36,9 @@ export class Context extends EventEmitter implements IContext {
     };
   }
 
-  private async fetchWorkspaceFolders(): Promise<void> {
+  async getWorkspaceFolderUris(): Promise<URI[]> {
     const result = await this.connection.workspace.getWorkspaceFolders();
-    this._workspaceFolderUris = new Set(result.map((it) => it.uri));
-  }
-
-  getWorkspaceFolderUris(): URI[] {
-    return Array.from(this._workspaceFolderUris).map((it) => {
-      return URI.parse(it);
-    });
+    return Array.from(new Set(result.map((it) => it.uri))).map((it) => URI.parse(it));
   }
 
   private configureCapabilties(capabilities: ClientCapabilities) {
@@ -65,17 +55,7 @@ export class Context extends EventEmitter implements IContext {
     );
   }
 
-  private async registerWorkspaceFeature() {
-    await this.fetchWorkspaceFolders();
-    this.connection.workspace.onDidChangeWorkspaceFolders((event) => {
-      for (let index = 0; index < event.removed.length; index++)
-        this._workspaceFolderUris.delete(event.removed[index].uri);
-      for (let index = 0; index < event.added.length; index++)
-        this._workspaceFolderUris.add(event.added[index].uri);
-    });
-  }
-
-  private async onInitialize(params: InitializeParams) {
+  private onInitialize(params: InitializeParams) {
     this.configureCapabilties(params.capabilities);
 
     const result: InitializeResult = {
@@ -83,12 +63,6 @@ export class Context extends EventEmitter implements IContext {
       capabilities: {
         completionProvider: {
           resolveProvider: true
-        },
-        workspace: {
-          workspaceFolders: {
-            supported: true,
-            changeNotifications: true
-          }
         }
       }
     };
@@ -99,7 +73,6 @@ export class Context extends EventEmitter implements IContext {
           supported: true
         }
       };
-      await this.registerWorkspaceFeature();
     }
 
     this.emit('ready', this);
@@ -113,7 +86,8 @@ export class Context extends EventEmitter implements IContext {
     }
 
     for (let index = 0; index < uris.length; index++) {
-      if (fs.existsSync(uris[index])) return uris[index];
+      const item = this.textDocumentManager.get(uris[index])
+      if (item != null) return uris[index];
     }
 
     return uris[0];
@@ -121,9 +95,8 @@ export class Context extends EventEmitter implements IContext {
 
   readFile(targetUri: string): string {
     try {
-      const buffer = fs.readFileSync(targetUri);
-      const content = new TextDecoder().decode(buffer);
-      return crlf(content, LF);
+      const textDocument = this.textDocumentManager.get(targetUri);
+      return crlf(textDocument.getText(), LF);
     } catch (err) {
       console.error(err);
     }
