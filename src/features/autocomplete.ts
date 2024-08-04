@@ -9,7 +9,7 @@ import {
   TextDocumentPositionParams
 } from 'vscode-languageserver/node';
 
-import { Context } from '../context';
+import ctx from '../context';
 import documentManager from '../helper/document-manager';
 import { getCompletionItemKind } from '../helper/kind';
 import { LookupHelper } from '../helper/lookup-type';
@@ -53,14 +53,15 @@ export const getDefaultCompletionList = (): CompletionItem[] => {
   ];
 };
 
-export function activate(ctx: Context) {
+export function activate() {
   ctx.connection.onCompletion(
     async (textDocumentPosition: TextDocumentPositionParams) => {
       const { position } = textDocumentPosition;
 
-      const activeDocument = await documentManager.open(
+      const document = ctx.textDocumentManager.get(
         textDocumentPosition.textDocument.uri
       );
+      const activeDocument = documentManager.get(document);
 
       const helper = new LookupHelper(activeDocument.textDocument);
       const astResult = helper.lookupAST(position);

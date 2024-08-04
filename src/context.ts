@@ -75,6 +75,7 @@ export class Context extends EventEmitter implements IContext {
       };
     }
 
+
     this.emit('ready', this);
 
     return result;
@@ -108,3 +109,5 @@ export class Context extends EventEmitter implements IContext {
     this.connection.listen();
   }
 }
+
+export default new Context();
