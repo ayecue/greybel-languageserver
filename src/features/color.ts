@@ -14,8 +14,8 @@ import {
   Range
 } from 'vscode-languageserver/node';
 
-import ctx from '../context';
 import documentManager from '../helper/document-manager';
+import { IContext } from '../types';
 
 enum ColorType {
   Black = 'black',
@@ -49,8 +49,8 @@ const createColorRegExp = () =>
 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-export function activate() {
-  ctx.connection.onColorPresentation((params: ColorPresentationParams) => {
+export function activate(context: IContext) {
+  context.connection.onColorPresentation((params: ColorPresentationParams) => {
     return [
       {
         label: `#${colorConvert.rgb.hex(
@@ -62,8 +62,10 @@ export function activate() {
     ];
   });
 
-  ctx.connection.onDocumentColor(async (params: DocumentColorParams) => {
-    const textDocument = await ctx.getTextDocument(params.textDocument.uri);
+  context.connection.onDocumentColor(async (params: DocumentColorParams) => {
+    const textDocument = await context.fs.getTextDocument(
+      params.textDocument.uri
+    );
     const parseResult = await documentManager.next(textDocument);
     const chunk = parseResult.document as ASTChunk;
     const allAvailableStrings = chunk.literals.filter(

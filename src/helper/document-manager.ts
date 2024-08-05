@@ -45,7 +45,7 @@ export class ActiveDocument {
     const rootChunk = this.document as ASTChunkGreyScript;
     const rootPath = Utils.joinPath(URI.parse(this.textDocument.uri), '..');
     const context = this.documentManager.context;
-    const workspacePaths = await context.getWorkspaceFolderUris();
+    const workspacePaths = await context.fs.getWorkspaceFolderUris();
     const nativeImports = rootChunk.nativeImports
       .filter((nativeImport) => nativeImport.directory)
       .map((nativeImport) => {
@@ -62,7 +62,7 @@ export class ActiveDocument {
         .filter((nonNativeImport) => nonNativeImport.path)
         .map((nonNativeImport) => {
           if (nonNativeImport.path.startsWith('/')) {
-            return context.findExistingPath(
+            return context.fs.findExistingPath(
               Utils.joinPath(
                 workspacePaths[0],
                 nonNativeImport.path
@@ -73,7 +73,7 @@ export class ActiveDocument {
               ).toString()
             );
           }
-          return context.findExistingPath(
+          return context.fs.findExistingPath(
             Utils.joinPath(rootPath, nonNativeImport.path).toString(),
             Utils.joinPath(rootPath, `${nonNativeImport.path}.src`).toString()
           );
@@ -82,7 +82,7 @@ export class ActiveDocument {
         .filter((includeImport) => includeImport.path)
         .map((includeImport) => {
           if (includeImport.path.startsWith('/')) {
-            return context.findExistingPath(
+            return context.fs.findExistingPath(
               Utils.joinPath(workspacePaths[0], includeImport.path).toString(),
               Utils.joinPath(
                 workspacePaths[0],
@@ -90,7 +90,7 @@ export class ActiveDocument {
               ).toString()
             );
           }
-          return context.findExistingPath(
+          return context.fs.findExistingPath(
             Utils.joinPath(rootPath, includeImport.path).toString(),
             Utils.joinPath(rootPath, `${includeImport.path}.src`).toString()
           );
@@ -269,7 +269,7 @@ export class DocumentManager extends EventEmitter {
 
   async open(target: string): Promise<ActiveDocument | null> {
     try {
-      const textDocument = await this.context.getTextDocument(target);
+      const textDocument = await this.context.fs.getTextDocument(target);
       return this.get(textDocument);
     } catch (err) {
       return null;

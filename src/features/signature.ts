@@ -1,10 +1,10 @@
 import { ASTBase, ASTCallExpression, ASTType } from 'miniscript-core';
 import { SignatureHelp, SignatureHelpParams } from 'vscode-languageserver/node';
 
-import ctx from '../context';
 import documentManager from '../helper/document-manager';
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { createSignatureInfo } from '../helper/tooltip';
+import { IContext } from '../types';
 
 const getClosestCallExpression = (
   astResult: LookupASTResult
@@ -24,9 +24,9 @@ const getClosestCallExpression = (
   return null;
 };
 
-export function activate() {
-  ctx.connection.onSignatureHelp(async (params: SignatureHelpParams) => {
-    const document = await ctx.getTextDocument(params.textDocument.uri);
+export function activate(context: IContext) {
+  context.connection.onSignatureHelp(async (params: SignatureHelpParams) => {
+    const document = await context.fs.getTextDocument(params.textDocument.uri);
     documentManager.refresh(document);
     const helper = new LookupHelper(document);
     const astResult = helper.lookupAST(params.position);

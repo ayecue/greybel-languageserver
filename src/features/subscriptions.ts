@@ -1,9 +1,9 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import ctx from '../context';
 import documentManager from '../helper/document-manager';
+import { IContext } from '../types';
 
-export function activate() {
+export function activate(context: IContext) {
   const update = (document: TextDocument) => {
     if (document.languageId !== 'greyscript') {
       return false;
@@ -19,7 +19,7 @@ export function activate() {
     documentManager.clear(document);
   };
 
-  ctx.on('textDocument-open', update);
-  ctx.on('textDocument-change', update);
-  ctx.on('textDocument-close', clear);
+  context.on('textDocument-open', update);
+  context.on('textDocument-change', update);
+  context.on('textDocument-close', clear);
 }

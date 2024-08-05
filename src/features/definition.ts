@@ -9,9 +9,9 @@ import {
   Position
 } from 'vscode-languageserver/node';
 
-import ctx from '../context';
 import documentManager from '../helper/document-manager';
 import { LookupHelper } from '../helper/lookup-type';
+import { IContext } from '../types';
 
 const findAllDefinitions = (
   helper: LookupHelper,
@@ -46,9 +46,9 @@ const findAllDefinitions = (
   return definitions;
 };
 
-export function activate() {
-  ctx.connection.onDefinition(async (params: DefinitionParams) => {
-    const document = await ctx.getTextDocument(params.textDocument.uri);
+export function activate(context: IContext) {
+  context.connection.onDefinition(async (params: DefinitionParams) => {
+    const document = await context.fs.getTextDocument(params.textDocument.uri);
     const helper = new LookupHelper(document);
     const astResult = helper.lookupAST(params.position);
 

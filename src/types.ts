@@ -22,12 +22,18 @@ export interface IConfiguration {
 
 export interface IContext extends EventEmitter {
   readonly connection: ReturnType<typeof createConnection>;
+  readonly fs: IFileSystem;
 
+  listen(): Promise<void>;
+}
+
+export interface IFileSystem extends EventEmitter {
   getWorkspaceFolderUris(): Promise<URI[]>;
+  getAllTextDocuments(): TextDocument[];
   findExistingPath(...uris: string[]): string;
   getTextDocument(targetUri: string): Promise<TextDocument>
   readFile(targetUri: string): Promise<string>;
-  listen(): Promise<void>;
+  listen(connection: ReturnType<typeof createConnection>);
 }
 
 export interface IContextFeatures {

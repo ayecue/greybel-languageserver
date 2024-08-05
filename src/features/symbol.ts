@@ -8,10 +8,10 @@ import {
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import ctx from '../context';
 import documentManager from '../helper/document-manager';
 import { getSymbolItemKind } from '../helper/kind';
 import typeManager from '../helper/type-manager';
+import { IContext } from '../types';
 
 const findAllAssignments = (
   document: TextDocument,
@@ -52,9 +52,9 @@ const findAllAssignments = (
   return result;
 };
 
-export function activate() {
-  ctx.connection.onDocumentSymbol(async (params: DocumentSymbolParams) => {
-    const document = await ctx.getTextDocument(params.textDocument.uri);
+export function activate(context: IContext) {
+  context.connection.onDocumentSymbol(async (params: DocumentSymbolParams) => {
+    const document = await context.fs.getTextDocument(params.textDocument.uri);
     const parseResult = documentManager.get(document);
 
     if (!parseResult.document) {
@@ -64,10 +64,10 @@ export function activate() {
     return findAllAssignments(document, '');
   });
 
-  ctx.connection.onWorkspaceSymbol((params: WorkspaceSymbolParams) => {
+  context.connection.onWorkspaceSymbol((params: WorkspaceSymbolParams) => {
     const result: SymbolInformation[] = [];
 
-    for (const document of ctx.getAllTextDocuments()) {
+    for (const document of context.fs.getAllTextDocuments()) {
       const parseResult = documentManager.get(document);
 
       if (!parseResult.document) {

@@ -7,8 +7,8 @@ import {
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import ctx from '../context';
 import documentManager from '../helper/document-manager';
+import { IContext } from '../types';
 
 function lookupErrors(document: TextDocument): Diagnostic[] {
   const activeDocument = documentManager.get(document);
@@ -44,10 +44,12 @@ function lookupErrors(document: TextDocument): Diagnostic[] {
   });
 }
 
-export function activate() {
-  ctx.connection.languages.diagnostics.on(
+export function activate(context: IContext) {
+  context.connection.languages.diagnostics.on(
     async (params: DocumentDiagnosticParams) => {
-      const document = await ctx.getTextDocument(params.textDocument.uri);
+      const document = await context.fs.getTextDocument(
+        params.textDocument.uri
+      );
       const diagnostics = lookupErrors(document);
 
       if (diagnostics.length === 0) {

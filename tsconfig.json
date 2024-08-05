@@ -11,7 +11,8 @@
     "rootDir": "src",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "declaration": true
+    "declaration": true,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*"

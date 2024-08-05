@@ -1,4 +1,4 @@
-import context from './context';
+import { NodeContext } from './context/node';
 import documentManager from './helper/document-manager';
 
 import { activate as activateAutocomplete } from './features/autocomplete';
@@ -11,18 +11,20 @@ import { activate as activateSignature } from './features/signature';
 import { activate as activateSubscriptions } from './features/subscriptions';
 import { activate as activateSymbol } from './features/symbol';
 
+const context = new NodeContext();
+
 documentManager.setContext(context);
 
-context.on('ready', () => {
-  activateAutocomplete();
-  activateColor();
-  activateDefinition();
-  activateDiagnostic();
-  activateFormatter();
-  activateHover();
-  activateSignature();
-  activateSubscriptions();
-  activateSymbol();
+context.on('ready', (ctx) => {
+  activateAutocomplete(ctx);
+  activateColor(ctx);
+  activateDefinition(ctx);
+  activateDiagnostic(ctx);
+  activateFormatter(ctx);
+  activateHover(ctx);
+  activateSignature(ctx);
+  activateSubscriptions(ctx);
+  activateSymbol(ctx);
 });
 
 context.listen();

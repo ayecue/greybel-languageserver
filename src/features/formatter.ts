@@ -6,15 +6,14 @@ import {
   TextEdit
 } from 'vscode-languageserver/node';
 
-import ctx from '../context';
 import documentManager from '../helper/document-manager';
-import { IConfiguration } from '../types';
+import { IConfiguration, IContext } from '../types';
 
-export function activate() {
+export function activate(context: IContext) {
   async function tryFormat(content: string): Promise<string | null> {
     try {
       const config: IConfiguration =
-        await ctx.connection.workspace.getConfiguration('greybel');
+        await context.connection.workspace.getConfiguration('greybel');
 
       return new DirectTranspiler({
         code: content,
@@ -31,9 +30,11 @@ export function activate() {
     }
   }
 
-  ctx.connection.onDocumentFormatting(
+  context.connection.onDocumentFormatting(
     async (params: DocumentFormattingParams) => {
-      const document = await ctx.getTextDocument(params.textDocument.uri);
+      const document = await context.fs.getTextDocument(
+        params.textDocument.uri
+      );
       const activeDocument = documentManager.get(document);
       const result = await tryFormat(document.getText());
 
