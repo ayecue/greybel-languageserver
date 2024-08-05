@@ -19,7 +19,7 @@ export function activate(context: IContext) {
     documentManager.clear(document);
   };
 
-  context.on('textDocument-open', update);
-  context.on('textDocument-change', update);
-  context.on('textDocument-close', clear);
+  context.fs.on('textDocument-open', update);
+  context.fs.on('textDocument-change', update);
+  context.fs.on('textDocument-close', clear);
 }
