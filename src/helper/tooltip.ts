@@ -8,7 +8,7 @@ import {
   Hover,
   ParameterInformation,
   SignatureInformation
-} from 'vscode-languageserver';
+} from 'vscode-languageserver/node';
 
 import { MarkdownString } from './markdown-string';
 

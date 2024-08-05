@@ -1,8 +1,9 @@
 import {
   DidChangeTextDocumentParams,
   DidCloseTextDocumentParams,
-  DidOpenTextDocumentParams
-} from 'vscode-languageserver';
+  DidOpenTextDocumentParams,
+  TextDocumentChangeEvent
+} from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import ctx from '../context';
@@ -24,22 +25,21 @@ export function activate() {
     documentManager.clear(document);
   };
 
-  ctx.connection.onDidOpenTextDocument((params: DidOpenTextDocumentParams) => {
-    const document = ctx.textDocumentManager.get(params.textDocument.uri);
-    update(document);
-  });
-
-  ctx.connection.onDidChangeTextDocument(
-    (params: DidChangeTextDocumentParams) => {
-      const document = ctx.textDocumentManager.get(params.textDocument.uri);
-      update(document);
+  ctx.textDocumentManager.onDidOpen(
+    (event: TextDocumentChangeEvent<TextDocument>) => {
+      update(event.document);
     }
   );
 
-  ctx.connection.onDidCloseTextDocument(
-    (params: DidCloseTextDocumentParams) => {
-      const document = ctx.textDocumentManager.get(params.textDocument.uri);
-      clear(document);
+  ctx.textDocumentManager.onDidChangeContent(
+    (event: TextDocumentChangeEvent<TextDocument>) => {
+      update(event.document);
+    }
+  );
+
+  ctx.textDocumentManager.onDidClose(
+    (event: TextDocumentChangeEvent<TextDocument>) => {
+      clear(event.document);
     }
   );
 }

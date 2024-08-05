@@ -4,7 +4,7 @@ import {
   DocumentFormattingParams,
   Range,
   TextEdit
-} from 'vscode-languageserver';
+} from 'vscode-languageserver/node';
 
 import ctx from '../context';
 import documentManager from '../helper/document-manager';
@@ -42,7 +42,7 @@ export function activate() {
       }
 
       const textRange: Range = {
-        start: activeDocument.document.start,
+        start: { line: 0, character: 0 },
         end: activeDocument.document.end
       };
 

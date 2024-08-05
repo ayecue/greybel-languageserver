@@ -8,7 +8,7 @@ import {
   SignatureDefinitionTypeMeta
 } from 'meta-utils';
 import path from 'path';
-import { Hover, HoverParams } from 'vscode-languageserver';
+import { Hover, HoverParams } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 

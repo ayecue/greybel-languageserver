@@ -4,7 +4,7 @@ import {
 } from 'greybel-transpiler';
 import { URI, Utils } from 'vscode-uri';
 
-import ctx from '../context';
+import ctx from '../../context';
 
 export class TranspilerResourceProvider extends TranspilerResourceProviderBase {
   getHandler(): TranspilerResourceHandler {

@@ -1,5 +1,10 @@
 import { ASTRange } from 'miniscript-core';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
+import {
+  Diagnostic,
+  DiagnosticSeverity,
+  DocumentDiagnosticParams,
+  DocumentDiagnosticReportKind
+} from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import ctx from '../context';
@@ -40,21 +45,22 @@ function lookupErrors(document: TextDocument): Diagnostic[] {
 }
 
 export function activate() {
-  documentManager.on('parsed', (document: TextDocument) => {
-    const diagnostics = lookupErrors(document);
+  ctx.connection.languages.diagnostics.on(
+    (params: DocumentDiagnosticParams) => {
+      const document = ctx.textDocumentManager.get(params.textDocument.uri);
+      const diagnostics = lookupErrors(document);
 
-    if (diagnostics.length === 0) return;
+      if (diagnostics.length === 0) {
+        return {
+          kind: DocumentDiagnosticReportKind.Full,
+          items: []
+        };
+      }
 
-    ctx.connection.sendDiagnostics({
-      uri: document.uri,
-      diagnostics
-    });
-  });
-
-  documentManager.on('cleared', (document: TextDocument) => {
-    ctx.connection.sendDiagnostics({
-      uri: document.uri,
-      diagnostics: []
-    });
-  });
+      return {
+        kind: DocumentDiagnosticReportKind.Full,
+        items: diagnostics
+      };
+    }
+  );
 }

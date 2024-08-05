@@ -54,86 +54,78 @@ export const getDefaultCompletionList = (): CompletionItem[] => {
 };
 
 export function activate() {
-  ctx.connection.onCompletion(
-    async (textDocumentPosition: TextDocumentPositionParams) => {
-      const { position } = textDocumentPosition;
+  ctx.connection.onCompletion(async (params: TextDocumentPositionParams) => {
+    const document = ctx.textDocumentManager.get(params.textDocument.uri);
+    const activeDocument = documentManager.get(document);
 
-      const document = ctx.textDocumentManager.get(
-        textDocumentPosition.textDocument.uri
-      );
-      const activeDocument = documentManager.get(document);
+    const helper = new LookupHelper(activeDocument.textDocument);
+    const astResult = helper.lookupAST(params.position);
+    const completionItems: CompletionItem[] = [];
+    let isProperty = false;
 
-      const helper = new LookupHelper(activeDocument.textDocument);
-      const astResult = helper.lookupAST(position);
-      const completionItems: CompletionItem[] = [];
-      let isProperty = false;
+    if (astResult) {
+      const { closest } = astResult;
 
-      if (astResult) {
-        const { closest } = astResult;
-
-        if (closest instanceof ASTMemberExpression) {
-          completionItems.push(
-            ...(await getPropertyCompletionList(helper, closest))
-          );
-          isProperty = true;
-        } else if (closest instanceof ASTIndexExpression) {
-          completionItems.push(
-            ...(await getPropertyCompletionList(helper, closest))
-          );
-          isProperty = true;
-        } else {
-          completionItems.push(...getDefaultCompletionList());
-        }
+      if (closest instanceof ASTMemberExpression) {
+        completionItems.push(
+          ...(await getPropertyCompletionList(helper, closest))
+        );
+        isProperty = true;
+      } else if (closest instanceof ASTIndexExpression) {
+        completionItems.push(
+          ...(await getPropertyCompletionList(helper, closest))
+        );
+        isProperty = true;
       } else {
         completionItems.push(...getDefaultCompletionList());
-        completionItems.push(
-          ...transformToCompletionItems(
-            helper.findAllAvailableIdentifierInRoot()
-          )
-        );
       }
-
-      if (!astResult || isProperty) {
-        return completionItems;
-      }
-
-      const existingProperties = new Set([
-        ...completionItems.map((item) => item.label)
-      ]);
-      const allImports = await activeDocument.getImports();
-
-      // get all identifer available in imports
-      for (const item of allImports) {
-        const { document } = item;
-
-        if (!document) {
-          continue;
-        }
-
-        const importHelper = new LookupHelper(item.textDocument);
-
-        completionItems.push(
-          ...transformToCompletionItems(
-            importHelper.findAllAvailableIdentifier(document)
-          )
-            .filter((item) => !existingProperties.has(item.label))
-            .map((item) => {
-              existingProperties.add(item.label);
-              return item;
-            })
-        );
-      }
-
-      // get all identifer available in scope
+    } else {
+      completionItems.push(...getDefaultCompletionList());
       completionItems.push(
-        ...transformToCompletionItems(
-          helper.findAllAvailableIdentifierRelatedToPosition(astResult.closest)
-        ).filter((item) => !existingProperties.has(item.label))
+        ...transformToCompletionItems(helper.findAllAvailableIdentifierInRoot())
       );
+    }
 
+    if (!astResult || isProperty) {
       return completionItems;
     }
-  );
+
+    const existingProperties = new Set([
+      ...completionItems.map((item) => item.label)
+    ]);
+    const allImports = await activeDocument.getImports();
+
+    // get all identifer available in imports
+    for (const item of allImports) {
+      const { document } = item;
+
+      if (!document) {
+        continue;
+      }
+
+      const importHelper = new LookupHelper(item.textDocument);
+
+      completionItems.push(
+        ...transformToCompletionItems(
+          importHelper.findAllAvailableIdentifier(document)
+        )
+          .filter((item) => !existingProperties.has(item.label))
+          .map((item) => {
+            existingProperties.add(item.label);
+            return item;
+          })
+      );
+    }
+
+    // get all identifer available in scope
+    completionItems.push(
+      ...transformToCompletionItems(
+        helper.findAllAvailableIdentifierRelatedToPosition(astResult.closest)
+      ).filter((item) => !existingProperties.has(item.label))
+    );
+
+    return completionItems;
+  });
 
   ctx.connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
     return item;

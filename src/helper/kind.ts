@@ -1,5 +1,5 @@
 import { CompletionItemKind as EntityCompletionItemKind } from 'miniscript-type-analyzer';
-import { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
+import { CompletionItemKind, SymbolKind } from 'vscode-languageserver/node';
 
 export const getCompletionItemKind = (
   kind: EntityCompletionItemKind

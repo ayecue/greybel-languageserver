@@ -5,7 +5,7 @@ import {
   SymbolInformation,
   SymbolKind,
   WorkspaceSymbolParams
-} from 'vscode-languageserver';
+} from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import ctx from '../context';

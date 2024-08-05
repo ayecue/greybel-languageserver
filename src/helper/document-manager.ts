@@ -270,6 +270,7 @@ export class DocumentManager extends EventEmitter {
   open(target: string): ActiveDocument | null {
     try {
       const textDocument = this.context.textDocumentManager.get(target);
+      console.log(textDocument, target);
       return this.get(textDocument);
     } catch (err) {
       return null;

@@ -58,12 +58,28 @@ export class Context extends EventEmitter implements IContext {
   private onInitialize(params: InitializeParams) {
     this.configureCapabilties(params.capabilities);
 
+
+
+
     const result: InitializeResult = {
-      textDocumentSync: TextDocumentSyncKind.Incremental,
       capabilities: {
         completionProvider: {
+          triggerCharacters: ['.'],
           resolveProvider: true
-        }
+        },
+        hoverProvider: true,
+        colorProvider: true,
+        definitionProvider: true,
+        documentFormattingProvider: true,
+        signatureHelpProvider: {
+          triggerCharacters: [',', '(']
+        },
+        documentSymbolProvider: true,
+        diagnosticProvider: {
+          interFileDependencies: false,
+          workspaceDiagnostics: false
+        },
+        textDocumentSync: TextDocumentSyncKind.Incremental
       }
     };
 
@@ -74,7 +90,6 @@ export class Context extends EventEmitter implements IContext {
         }
       };
     }
-
 
     this.emit('ready', this);
 
