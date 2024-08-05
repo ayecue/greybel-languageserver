@@ -46,8 +46,8 @@ function lookupErrors(document: TextDocument): Diagnostic[] {
 
 export function activate() {
   ctx.connection.languages.diagnostics.on(
-    (params: DocumentDiagnosticParams) => {
-      const document = ctx.textDocumentManager.get(params.textDocument.uri);
+    async (params: DocumentDiagnosticParams) => {
+      const document = await ctx.getTextDocument(params.textDocument.uri);
       const diagnostics = lookupErrors(document);
 
       if (diagnostics.length === 0) {

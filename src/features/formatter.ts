@@ -33,7 +33,7 @@ export function activate() {
 
   ctx.connection.onDocumentFormatting(
     async (params: DocumentFormattingParams) => {
-      const document = ctx.textDocumentManager.get(params.textDocument.uri);
+      const document = await ctx.getTextDocument(params.textDocument.uri);
       const activeDocument = documentManager.get(document);
       const result = await tryFormat(document.getText());
 

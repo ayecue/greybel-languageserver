@@ -1,5 +1,6 @@
 import crlf, { LF } from 'crlf-normalize';
 import EventEmitter from 'events';
+import fs from 'fs';
 // @ts-ignore: No type definitions
 import { TextDecoderLite as TextDecoder } from 'text-encoder-lite';
 import {
@@ -9,7 +10,8 @@ import {
   InitializeResult,
   ProposedFeatures,
   TextDocuments,
-  TextDocumentSyncKind
+  TextDocumentSyncKind,
+  TextDocumentChangeEvent
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
@@ -17,7 +19,8 @@ import { IContext, IContextFeatures } from './types';
 
 export class Context extends EventEmitter implements IContext {
   readonly connection: ReturnType<typeof createConnection>;
-  readonly textDocumentManager: TextDocuments<TextDocument>;
+
+  private _textDocumentManager: TextDocuments<TextDocument>;
   private _features: IContextFeatures;
 
   constructor() {
@@ -26,7 +29,7 @@ export class Context extends EventEmitter implements IContext {
     this.connection = createConnection(
       ProposedFeatures.all
     );
-    this.textDocumentManager = new TextDocuments(
+    this._textDocumentManager = new TextDocuments(
       TextDocument
     );
     this._features = {
@@ -57,9 +60,6 @@ export class Context extends EventEmitter implements IContext {
 
   private onInitialize(params: InitializeParams) {
     this.configureCapabilties(params.capabilities);
-
-
-
 
     const result: InitializeResult = {
       capabilities: {
@@ -102,25 +102,55 @@ export class Context extends EventEmitter implements IContext {
     }
 
     for (let index = 0; index < uris.length; index++) {
-      const item = this.textDocumentManager.get(uris[index])
+      const item = this.getTextDocument(uris[index])
       if (item != null) return uris[index];
     }
 
     return uris[0];
   }
 
-  readFile(targetUri: string): string {
-    try {
-      const textDocument = this.textDocumentManager.get(targetUri);
-      return crlf(textDocument.getText(), LF);
-    } catch (err) {
-      console.error(err);
+  getAllTextDocuments(): TextDocument[] {
+    return this._textDocumentManager.all();
+  }
+
+  async getTextDocument(targetUri: string): Promise<TextDocument> {
+    const textDocument = this._textDocumentManager.get(targetUri);
+    if (textDocument) return textDocument;
+    const uri = URI.parse(targetUri);
+    if (uri.scheme == 'file') {
+      try {
+        const out = await fs.promises.readFile(uri.fsPath);
+        const content = new TextDecoder().decode(out);
+        return TextDocument.create(targetUri, 'greyscript', 0, content);
+      } catch (err) {
+      }
     }
+    return null;
+  }
+
+  async readFile(targetUri: string): Promise<string> {
+    const document = await this.getTextDocument(targetUri);
+    return document.getText();
   }
 
   async listen() {
     this.connection.onInitialize(this.onInitialize.bind(this));
-    this.textDocumentManager.listen(this.connection);
+    this._textDocumentManager.listen(this.connection);
+    this._textDocumentManager.onDidOpen(
+      (event: TextDocumentChangeEvent<TextDocument>) => {
+        this.emit('textDocument-open', event.document);
+      }
+    );
+    this._textDocumentManager.onDidChangeContent(
+      (event: TextDocumentChangeEvent<TextDocument>) => {
+        this.emit('textDocument-change', event.document);
+      }
+    );
+    this._textDocumentManager.onDidClose(
+      (event: TextDocumentChangeEvent<TextDocument>) => {
+        this.emit('textDocument-close', event.document);
+      }
+    );
     this.connection.listen();
   }
 }

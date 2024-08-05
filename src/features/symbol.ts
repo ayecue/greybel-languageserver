@@ -53,8 +53,8 @@ const findAllAssignments = (
 };
 
 export function activate() {
-  ctx.connection.onDocumentSymbol((params: DocumentSymbolParams) => {
-    const document = ctx.textDocumentManager.get(params.textDocument.uri);
+  ctx.connection.onDocumentSymbol(async (params: DocumentSymbolParams) => {
+    const document = await ctx.getTextDocument(params.textDocument.uri);
     const parseResult = documentManager.get(document);
 
     if (!parseResult.document) {
@@ -67,7 +67,7 @@ export function activate() {
   ctx.connection.onWorkspaceSymbol((params: WorkspaceSymbolParams) => {
     const result: SymbolInformation[] = [];
 
-    for (const document of ctx.textDocumentManager.all()) {
+    for (const document of ctx.getAllTextDocuments()) {
       const parseResult = documentManager.get(document);
 
       if (!parseResult.document) {

@@ -267,10 +267,9 @@ export class DocumentManager extends EventEmitter {
     return true;
   }
 
-  open(target: string): ActiveDocument | null {
+  async open(target: string): Promise<ActiveDocument | null> {
     try {
-      const textDocument = this.context.textDocumentManager.get(target);
-      console.log(textDocument, target);
+      const textDocument = await this.context.getTextDocument(target);
       return this.get(textDocument);
     } catch (err) {
       return null;

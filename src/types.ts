@@ -22,11 +22,11 @@ export interface IConfiguration {
 
 export interface IContext extends EventEmitter {
   readonly connection: ReturnType<typeof createConnection>;
-  readonly textDocumentManager: TextDocuments<TextDocument>;
 
   getWorkspaceFolderUris(): Promise<URI[]>;
   findExistingPath(...uris: string[]): string;
-  readFile(targetUri: string): string;
+  getTextDocument(targetUri: string): Promise<TextDocument>
+  readFile(targetUri: string): Promise<string>;
   listen(): Promise<void>;
 }
 

@@ -63,7 +63,7 @@ export function activate() {
   });
 
   ctx.connection.onDocumentColor(async (params: DocumentColorParams) => {
-    const textDocument = ctx.textDocumentManager.get(params.textDocument.uri);
+    const textDocument = await ctx.getTextDocument(params.textDocument.uri);
     const parseResult = await documentManager.next(textDocument);
     const chunk = parseResult.document as ASTChunk;
     const allAvailableStrings = chunk.literals.filter(

@@ -55,7 +55,7 @@ export const getDefaultCompletionList = (): CompletionItem[] => {
 
 export function activate() {
   ctx.connection.onCompletion(async (params: TextDocumentPositionParams) => {
-    const document = ctx.textDocumentManager.get(params.textDocument.uri);
+    const document = await ctx.getTextDocument(params.textDocument.uri);
     const activeDocument = documentManager.get(document);
 
     const helper = new LookupHelper(activeDocument.textDocument);

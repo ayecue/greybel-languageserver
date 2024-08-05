@@ -26,7 +26,7 @@ const getClosestCallExpression = (
 
 export function activate() {
   ctx.connection.onSignatureHelp(async (params: SignatureHelpParams) => {
-    const document = ctx.textDocumentManager.get(params.textDocument.uri);
+    const document = await ctx.getTextDocument(params.textDocument.uri);
     documentManager.refresh(document);
     const helper = new LookupHelper(document);
     const astResult = helper.lookupAST(params.position);

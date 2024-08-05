@@ -48,7 +48,7 @@ const findAllDefinitions = (
 
 export function activate() {
   ctx.connection.onDefinition(async (params: DefinitionParams) => {
-    const document = ctx.textDocumentManager.get(params.textDocument.uri);
+    const document = await ctx.getTextDocument(params.textDocument.uri);
     const helper = new LookupHelper(document);
     const astResult = helper.lookupAST(params.position);
 
