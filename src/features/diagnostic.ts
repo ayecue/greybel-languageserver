@@ -10,8 +10,8 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import documentManager from '../helper/document-manager';
 import { IContext } from '../types';
 
-function lookupErrors(document: TextDocument): Diagnostic[] {
-  const activeDocument = documentManager.get(document);
+async function lookupErrors(document: TextDocument): Promise<Diagnostic[]> {
+  const activeDocument = await documentManager.next(document);
 
   return activeDocument.errors.map((err: any) => {
     // Lexer error and Parser error
@@ -50,7 +50,7 @@ export function activate(context: IContext) {
       const document = await context.fs.getTextDocument(
         params.textDocument.uri
       );
-      const diagnostics = lookupErrors(document);
+      const diagnostics = await lookupErrors(document);
 
       if (diagnostics.length === 0) {
         return {

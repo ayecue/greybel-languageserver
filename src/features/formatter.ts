@@ -35,7 +35,7 @@ export function activate(context: IContext) {
       const document = await context.fs.getTextDocument(
         params.textDocument.uri
       );
-      const activeDocument = documentManager.get(document);
+      const activeDocument = await documentManager.next(document);
       const result = await tryFormat(document.getText());
 
       if (result === null) {

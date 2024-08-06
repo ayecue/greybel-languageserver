@@ -145,7 +145,7 @@ export interface QueueItem {
   createdAt: number;
 }
 
-export const DOCUMENT_PARSE_QUEUE_PARSE_TIMEOUT = 100;
+export const DOCUMENT_PARSE_QUEUE_PARSE_TIMEOUT = 120;
 
 export class DocumentManager extends EventEmitter {
   readonly results: LRU<string, ActiveDocument>;
@@ -182,7 +182,7 @@ export class DocumentManager extends EventEmitter {
     const currentTime = Date.now();
     const items = Array.from(this.queue.values());
 
-    for (let index = 0; index < items.length; index) {
+    for (let index = 0; index < items.length; index++) {
       const item = items[index];
       if (currentTime - item.createdAt > this.parseTimeout) {
         schedule(() => this.refresh(item.document));
@@ -287,28 +287,26 @@ export class DocumentManager extends EventEmitter {
     document: TextDocument,
     timeout: number = 5000
   ): Promise<ActiveDocument> {
-    const me = this;
+    return new Promise((resolve) => {
+      schedule(() => {
+        if (!this.queue.has(document.uri)) return resolve(this.get(document));
 
-    if (me.queue.has(document.uri)) {
-      return new Promise((resolve) => {
         const onTimeout = () => {
-          me.removeListener('parsed', onParse);
-          resolve(me.get(document));
+          this.removeListener('parsed', onParse);
+          resolve(this.get(document));
         };
         const onParse = (evDocument: TextDocument) => {
           if (evDocument.uri === document.uri) {
-            me.removeListener('parsed', onParse);
+            this.removeListener('parsed', onParse);
             clearTimeout(timer);
-            resolve(me.get(document));
+            resolve(this.get(document));
           }
         };
         const timer = setTimeout(onTimeout, timeout);
 
-        me.addListener('parsed', onParse);
+        this.addListener('parsed', onParse);
       });
-    }
-
-    return Promise.resolve(me.get(document));
+    });
   }
 
   clear(document: TextDocument): void {
