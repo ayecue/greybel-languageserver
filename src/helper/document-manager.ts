@@ -2,6 +2,7 @@ import EventEmitter from 'events';
 import { ASTChunkGreyScript, Parser } from 'greyscript-core';
 import LRU from 'lru-cache';
 import { ASTBaseBlockWithScope } from 'miniscript-core';
+import { schedule } from 'non-blocking-schedule';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 
@@ -144,15 +145,15 @@ export interface QueueItem {
   createdAt: number;
 }
 
-export const DOCUMENT_PARSE_QUEUE_INTERVAL = 1000;
-export const DOCUMENT_PARSE_QUEUE_PARSE_TIMEOUT = 2500;
+export const DOCUMENT_PARSE_QUEUE_PARSE_TIMEOUT = 100;
 
 export class DocumentManager extends EventEmitter {
   readonly results: LRU<string, ActiveDocument>;
 
   private _context: IContext | null;
   private queue: Map<string, QueueItem>;
-  private interval: NodeJS.Timeout | null;
+  private tickRef: () => void;
+  private timer: NodeJS.Timeout | null;
   private readonly parseTimeout: number;
 
   get context() {
@@ -172,21 +173,23 @@ export class DocumentManager extends EventEmitter {
       ttlAutopurge: true
     });
     this.queue = new Map();
-    this.interval = setInterval(
-      () => this.tick(),
-      DOCUMENT_PARSE_QUEUE_INTERVAL
-    );
+    this.tickRef = this.tick.bind(this);
+    this.timer = setTimeout(this.tickRef, 0);
     this.parseTimeout = parseTimeout;
   }
 
   private tick() {
     const currentTime = Date.now();
+    const items = Array.from(this.queue.values());
 
-    for (const item of this.queue.values()) {
+    for (let index = 0; index < items.length; index) {
+      const item = items[index];
       if (currentTime - item.createdAt > this.parseTimeout) {
-        this.refresh(item.document);
+        schedule(() => this.refresh(item.document));
       }
     }
+
+    this.timer = setTimeout(this.tickRef, 0);
   }
 
   refresh(document: TextDocument): ActiveDocument {

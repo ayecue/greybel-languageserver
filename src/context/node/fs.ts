@@ -5,8 +5,10 @@ import { URI } from "vscode-uri";
 import fs from "fs";
 
 import { IFileSystem } from "../../types";
+import LRUCache from "lru-cache";
 
 export class FileSystem extends EventEmitter implements IFileSystem {
+  private _tempTextDocumentCache: LRUCache<string, TextDocument>;
   private _textDocumentManager: TextDocuments<TextDocument>;
   private _workspace: ReturnType<typeof createConnection>['workspace'];
 
@@ -16,6 +18,10 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     this._textDocumentManager = new TextDocuments(
       TextDocument
     );
+    this._tempTextDocumentCache = new LRUCache({
+      ttl: 1000,
+      max: 100
+    });
   }
 
   async getWorkspaceFolderUris(): Promise<URI[]> {
@@ -40,18 +46,33 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     return this._textDocumentManager.all();
   }
 
+  async fetchTextDocument(targetUri: string): Promise<TextDocument> {
+    const uri = URI.parse(targetUri);
+    const cachedTextDocument = this._tempTextDocumentCache.get(targetUri);
+
+    if (cachedTextDocument != null) {
+      return cachedTextDocument;
+    }
+
+    let tempDoc: TextDocument | null = null;
+
+    try {
+      const out = await fs.promises.readFile(uri.fsPath);
+      const content = new TextDecoder().decode(out);
+
+      tempDoc = TextDocument.create(targetUri, 'greyscript', 0, content);
+    } catch (err) { }
+
+    this._tempTextDocumentCache.set(targetUri, tempDoc);
+
+    return tempDoc;
+  }
+
   async getTextDocument(targetUri: string): Promise<TextDocument> {
     const textDocument = this._textDocumentManager.get(targetUri);
     if (textDocument) return textDocument;
     const uri = URI.parse(targetUri);
-    if (uri.scheme == 'file') {
-      try {
-        const out = await fs.promises.readFile(uri.fsPath);
-        const content = new TextDecoder().decode(out);
-        return TextDocument.create(targetUri, 'greyscript', 0, content);
-      } catch (err) {
-      }
-    }
+    if (uri.scheme == 'file') return await this.fetchTextDocument(targetUri);
     return null;
   }
 

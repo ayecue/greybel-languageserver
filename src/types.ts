@@ -31,6 +31,7 @@ export interface IFileSystem extends EventEmitter {
   getWorkspaceFolderUris(): Promise<URI[]>;
   getAllTextDocuments(): TextDocument[];
   findExistingPath(...uris: string[]): string;
+  fetchTextDocument(targetUri: string): Promise<TextDocument>;
   getTextDocument(targetUri: string): Promise<TextDocument>
   readFile(targetUri: string): Promise<string>;
   listen(connection: ReturnType<typeof createConnection>);

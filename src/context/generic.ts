@@ -57,6 +57,7 @@ export abstract class GenericContext extends EventEmitter implements IContext {
         },
         documentSymbolProvider: true,
         diagnosticProvider: {
+          identifier: 'greyscript',
           interFileDependencies: false,
           workspaceDiagnostics: false
         },
