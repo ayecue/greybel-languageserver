@@ -10,12 +10,13 @@ import { activate as activateHover } from './features/hover';
 import { activate as activateSignature } from './features/signature';
 import { activate as activateSubscriptions } from './features/subscriptions';
 import { activate as activateSymbol } from './features/symbol';
+import { IContext } from './types';
 
 const context = new NodeContext();
 
 documentManager.setContext(context);
 
-context.on('ready', (ctx) => {
+context.on('ready', (ctx: IContext) => {
   activateAutocomplete(ctx);
   activateColor(ctx);
   activateDefinition(ctx);

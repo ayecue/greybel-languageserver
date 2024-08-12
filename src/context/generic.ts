@@ -109,5 +109,7 @@ export abstract class GenericContext extends EventEmitter implements IContext {
     this.fs.listen(this.connection);
     this.connection.onInitialize(this.onInitialize.bind(this));
     this.connection.listen();
+
+    console.info('Language Server started listening!');
   }
 }
