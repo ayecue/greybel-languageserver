@@ -12,8 +12,7 @@ import { IConfiguration, IContext } from '../types';
 export function activate(context: IContext) {
   async function tryFormat(content: string): Promise<string | null> {
     try {
-      const config: IConfiguration =
-        await context.connection.workspace.getConfiguration('greybel');
+      const config: IConfiguration = await context.getConfiguration();
 
       return new DirectTranspiler({
         code: content,

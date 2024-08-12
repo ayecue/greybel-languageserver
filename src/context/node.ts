@@ -11,6 +11,6 @@ export class NodeContext extends GenericContext {
     super();
 
     this.connection = createConnection(ProposedFeatures.all);
-    this.fs = new FileSystem();
+    this.fs = new FileSystem(this);
   }
 }

@@ -1,10 +1,14 @@
 import { EventEmitter } from "stream";
 import {
-  createConnection,
-  TextDocuments
+  createConnection
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
+
+export enum IndentationType {
+  Tab = 'Tab',
+  Whitespace = 'Whitespace'
+}
 
 export interface IConfiguration {
   formatter: boolean;
@@ -14,7 +18,7 @@ export interface IConfiguration {
   transpiler: {
     beautify: {
       keepParentheses: boolean;
-      indentation: string;
+      indentation: IndentationType;
       indentationSpaces: number;
     };
   };
@@ -24,6 +28,9 @@ export interface IContext extends EventEmitter {
   readonly connection: ReturnType<typeof createConnection>;
   readonly fs: IFileSystem;
 
+  features: IContextFeatures;
+
+  getConfiguration(): Promise<IConfiguration>;
   listen(): Promise<void>;
 }
 
@@ -40,5 +47,4 @@ export interface IFileSystem extends EventEmitter {
 export interface IContextFeatures {
   configuration: boolean;
   workspaceFolder: boolean;
-  diagnosticRelatedInformation: boolean;
 }

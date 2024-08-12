@@ -7,7 +7,29 @@ import type {
 } from 'vscode-languageserver';
 import { TextDocumentSyncKind } from 'vscode-languageserver';
 
-import { IContext, IContextFeatures, IFileSystem } from '../types';
+import {
+  IConfiguration,
+  IContext,
+  IContextFeatures,
+  IFileSystem,
+  IndentationType
+} from '../types';
+
+function defaultConfig(): IConfiguration {
+  return {
+    formatter: true,
+    autocomplete: true,
+    hoverdocs: true,
+    diagnostic: true,
+    transpiler: {
+      beautify: {
+        keepParentheses: true,
+        indentation: IndentationType.Tab,
+        indentationSpaces: 2
+      }
+    }
+  };
+}
 
 export abstract class GenericContext extends EventEmitter implements IContext {
   abstract readonly connection: ReturnType<typeof createConnection>;
@@ -20,9 +42,17 @@ export abstract class GenericContext extends EventEmitter implements IContext {
 
     this._features = {
       configuration: false,
-      workspaceFolder: false,
-      diagnosticRelatedInformation: false
+      workspaceFolder: false
     };
+  }
+
+  get features() {
+    return this._features;
+  }
+
+  getConfiguration(): Promise<IConfiguration> {
+    if (!this._features.configuration) return Promise.resolve(defaultConfig());
+    return this.connection.workspace.getConfiguration('greybel');
   }
 
   protected configureCapabilties(capabilities: ClientCapabilities) {
@@ -31,11 +61,6 @@ export abstract class GenericContext extends EventEmitter implements IContext {
     );
     this._features.workspaceFolder = !!(
       capabilities.workspace && !!capabilities.workspace.workspaceFolders
-    );
-    this._features.diagnosticRelatedInformation = !!(
-      capabilities.textDocument &&
-      capabilities.textDocument.publishDiagnostics &&
-      capabilities.textDocument.publishDiagnostics.relatedInformation
     );
   }
 

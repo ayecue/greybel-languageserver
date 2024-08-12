@@ -1,7 +1,10 @@
 {
   "name": "greybel-lsp",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "Language Server for GreyScript",
+  "browser": "./dist/browser.js",
+  "main": "./dist/node.js",
+  "typings": "./dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "npm run build",
     "build": "tsc -p ./",

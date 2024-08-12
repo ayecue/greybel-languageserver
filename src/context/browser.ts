@@ -25,6 +25,6 @@ export class BrowserContext extends GenericContext {
       this._messageReader,
       this._messageWriter
     );
-    this.fs = new FileSystem();
+    this.fs = new FileSystem(this);
   }
 }

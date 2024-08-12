@@ -4,17 +4,19 @@ import EventEmitter from "events";
 import { URI } from "vscode-uri";
 import fs from "fs";
 
-import { IFileSystem } from "../../types";
+import { IContext, IFileSystem } from "../../types";
 import LRUCache from "lru-cache";
 
 export class FileSystem extends EventEmitter implements IFileSystem {
+  private _context: IContext;
   private _tempTextDocumentCache: LRUCache<string, TextDocument>;
   private _textDocumentManager: TextDocuments<TextDocument>;
-  private _workspace: ReturnType<typeof createConnection>['workspace'];
+  private _workspace: ReturnType<typeof createConnection>['workspace'] | null;
 
-  constructor() {
+  constructor(context: IContext) {
     super();
 
+    this._context = context;
     this._textDocumentManager = new TextDocuments(
       TextDocument
     );
@@ -25,6 +27,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
   }
 
   async getWorkspaceFolderUris(): Promise<URI[]> {
+    if (!this._context.features.workspaceFolder) return [];
     const result = await this._workspace.getWorkspaceFolders();
     return Array.from(new Set(result.map((it) => it.uri))).map((it) => URI.parse(it));
   }
