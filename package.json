@@ -24,6 +24,19 @@
     "url": "https://github.com/ayecue/greybel-languageserver/issues"
   },
   "homepage": "https://github.com/ayecue/greybel-languageserver#readme",
+  "keywords": [
+    "greybel",
+    "greyscript",
+    "greyhack",
+    "grey hack",
+    "grey",
+    "hack",
+    "miniscript",
+    "unity",
+    "lexer",
+    "parser",
+    "languageserver"
+  ],
   "devDependencies": {
     "@babel/core": "^7.16.10",
     "@babel/plugin-transform-runtime": "^7.16.8",
