@@ -1,6 +1,6 @@
 {
   "name": "greybel-languageserver",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Language Server for GreyScript",
   "browser": "./dist/browser.js",
   "main": "./dist/node.js",
@@ -18,7 +18,7 @@
     "node": "*"
   },
   "bin": {
-    "greybel-languageserver": "./bin/greybel-languageserver"
+    "greybel-languageserver": "./bin/greybel-languageserver.js"
   },
   "repository": {
     "type": "git",
