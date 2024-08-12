@@ -19,6 +19,12 @@ It supports the following providers:
 - workspace symbol
 - diagnostic
 
+## Install
+
+```bash
+npm install --save greybel-languageserver
+```
+
 ## How to use
 
 Currently, there are two server client versions. The reason for this is that VSCode supports development in your web browser but also on your local machine.
