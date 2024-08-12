@@ -22,10 +22,15 @@ It supports the following providers:
 ## Install
 
 ```bash
-npm install --save greybel-languageserver
+npm install -g greybel-languageserver
 ```
 
-## How to use
+## Usage
+```bash
+greybel-languageserver
+```
+
+## Implementation
 
 Currently, there are two server client versions. The reason for this is that VSCode supports development in your web browser but also on your local machine.
 
