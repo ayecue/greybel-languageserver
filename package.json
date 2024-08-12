@@ -2,8 +2,6 @@
   "name": "greybel-lsp",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index",
-  "typings": "dist/index",
   "scripts": {
     "prepublishOnly": "npm run build",
     "build": "tsc -p ./",
