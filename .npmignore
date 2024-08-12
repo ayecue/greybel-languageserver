@@ -10,3 +10,6 @@ test.ts
 test.js
 testing.src
 testing2.src
+tsconfig.json
+.eslintrc
+.circleci
