@@ -1,5 +1,7 @@
 # greybel-languageserver
 
+[![greybel-languageserver](https://circleci.com/gh/ayecue/greybel-languageserver.svg?style=svg)](https://circleci.com/gh/ayecue/greybel-languageserver)
+
 Language server for GreyScript. Provides several features such as auto-completion, hover tooltips and more.
 
 Currently only tested with VSCode! Feel free to take a look at the [implementation](https://github.com/ayecue/greybel-vs). Should work with any other client which is following [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide).
