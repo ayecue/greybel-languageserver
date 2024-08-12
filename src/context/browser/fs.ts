@@ -4,7 +4,7 @@ import EventEmitter from "events";
 import { URI } from "vscode-uri";
 import LRUCache from "lru-cache";
 
-import { IContext, IFileSystem } from "../../types";
+import { IContext, IFileSystem, LanguageId } from "../../types";
 
 export class FileSystem extends EventEmitter implements IFileSystem {
   private _context: IContext;
@@ -62,7 +62,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
       const out = await fetch(uri.toString());
       const content = await out.text();
 
-      tempDoc = TextDocument.create(targetUri, 'greyscript', 0, content);
+      tempDoc = TextDocument.create(targetUri, LanguageId, 0, content);
     } catch (err) { }
 
     this._tempTextDocumentCache.set(targetUri, tempDoc);

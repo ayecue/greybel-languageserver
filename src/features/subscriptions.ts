@@ -1,18 +1,18 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import documentManager from '../helper/document-manager';
-import { IContext } from '../types';
+import { IContext, LanguageId } from '../types';
 
 export function activate(context: IContext) {
   const update = (document: TextDocument) => {
-    if (document.languageId !== 'greyscript') {
+    if (document.languageId !== LanguageId) {
       return false;
     }
 
     return documentManager.update(document);
   };
   const clear = (document: TextDocument) => {
-    if (document.languageId !== 'greyscript') {
+    if (document.languageId !== LanguageId) {
       return;
     }
 

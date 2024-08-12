@@ -5,6 +5,9 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 
+export type LanguageId = 'greyscript';
+export const LanguageId: LanguageId = 'greyscript';
+
 export enum IndentationType {
   Tab = 'Tab',
   Whitespace = 'Whitespace'

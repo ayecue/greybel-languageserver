@@ -12,7 +12,8 @@ import {
   IContext,
   IContextFeatures,
   IFileSystem,
-  IndentationType
+  IndentationType,
+  LanguageId
 } from '../types';
 
 function defaultConfig(): IConfiguration {
@@ -83,7 +84,7 @@ export abstract class GenericContext extends EventEmitter implements IContext {
         documentSymbolProvider: true,
         workspaceSymbolProvider: true,
         diagnosticProvider: {
-          identifier: 'greyscript',
+          identifier: LanguageId,
           interFileDependencies: false,
           workspaceDiagnostics: false
         },

@@ -15,7 +15,7 @@ import { URI, Utils } from 'vscode-uri';
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { MarkdownString } from '../helper/markdown-string';
 import { createHover, formatTypes } from '../helper/tooltip';
-import { IContext } from '../types';
+import { IContext, LanguageId } from '../types';
 
 export function activate(context: IContext) {
   async function generateImportCodeHover(
@@ -129,7 +129,7 @@ export function activate(context: IContext) {
       label += ' ' + JSON.stringify(records, null, 2);
     }
 
-    hoverText.appendCodeblock('greyscript', label);
+    hoverText.appendCodeblock(LanguageId, label);
 
     return {
       contents: hoverText.toString()

@@ -10,6 +10,7 @@ import {
   SignatureInformation
 } from 'vscode-languageserver/node';
 
+import { LanguageId } from '../types';
 import { MarkdownString } from './markdown-string';
 
 export function formatTypes(types: SignatureDefinitionTypeMeta[] = []): string {
@@ -55,7 +56,7 @@ export const appendTooltipHeader = (
   item: IEntity,
   definition: SignatureDefinitionFunction
 ) => {
-  text.appendCodeblock('greyscript', createTooltipHeader(item, definition));
+  text.appendCodeblock(LanguageId, createTooltipHeader(item, definition));
   text.appendMarkdown('***\n');
 };
 
@@ -69,7 +70,7 @@ export const appendTooltipBody = (
 
   if (example.length > 0) {
     text.appendMarkdown('#### Examples:\n');
-    text.appendCodeblock('greyscript', example.join('\n'));
+    text.appendCodeblock(LanguageId, example.join('\n'));
   }
 };
 
