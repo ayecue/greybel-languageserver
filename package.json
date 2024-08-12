@@ -1,5 +1,5 @@
 {
-  "name": "greybel-lsp",
+  "name": "greybel-languageserver",
   "version": "0.1.0",
   "description": "Language Server for GreyScript",
   "browser": "./dist/browser.js",
@@ -16,14 +16,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayecue/greybel-lsp.git"
+    "url": "git+https://github.com/ayecue/greybel-languageserver.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ayecue/greybel-lsp/issues"
+    "url": "https://github.com/ayecue/greybel-languageserver/issues"
   },
-  "homepage": "https://github.com/ayecue/greybel-lsp#readme",
+  "homepage": "https://github.com/ayecue/greybel-languageserver#readme",
   "devDependencies": {
     "@babel/core": "^7.16.10",
     "@babel/plugin-transform-runtime": "^7.16.8",

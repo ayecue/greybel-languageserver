@@ -81,6 +81,7 @@ export abstract class GenericContext extends EventEmitter implements IContext {
           triggerCharacters: [',', '(']
         },
         documentSymbolProvider: true,
+        workspaceSymbolProvider: true,
         diagnosticProvider: {
           identifier: 'greyscript',
           interFileDependencies: false,
