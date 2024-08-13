@@ -27,7 +27,7 @@ const getClosestCallExpression = (
 export function activate(context: IContext) {
   context.connection.onSignatureHelp(async (params: SignatureHelpParams) => {
     const document = await context.fs.getTextDocument(params.textDocument.uri);
-    await documentManager.next(document);
+    await documentManager.getLatest(document);
     const helper = new LookupHelper(document);
     const astResult = helper.lookupAST(params.position);
 

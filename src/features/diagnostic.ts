@@ -11,7 +11,7 @@ import documentManager from '../helper/document-manager';
 import { IContext } from '../types';
 
 async function lookupErrors(document: TextDocument): Promise<Diagnostic[]> {
-  const activeDocument = await documentManager.next(document);
+  const activeDocument = await documentManager.getLatest(document);
 
   return activeDocument.errors.map((err: any) => {
     // Lexer error and Parser error

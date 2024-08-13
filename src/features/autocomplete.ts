@@ -60,7 +60,7 @@ export function activate(context: IContext) {
         params.textDocument.uri
       );
       // waiting for changes
-      const activeDocument = await documentManager.next(document);
+      const activeDocument = await documentManager.getLatest(document);
 
       const helper = new LookupHelper(activeDocument.textDocument);
       const astResult = helper.lookupAST(params.position);

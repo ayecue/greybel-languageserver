@@ -9,7 +9,7 @@ export function activate(context: IContext) {
       return false;
     }
 
-    return documentManager.update(document);
+    return documentManager.schedule(document);
   };
   const clear = (document: TextDocument) => {
     if (document.languageId !== LanguageId) {
