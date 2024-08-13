@@ -38,7 +38,7 @@ In case it is required to have the language server running within the context of
 
 If you want to use the language server for local development go ahead and use `dist/node.js`.
 
-### VSCode
+#### VSCode implementation
 ```ts
 import * as path from 'path';
 import {
@@ -75,7 +75,7 @@ client.registerProposedFeatures();
 client.start();
 ```
 
-### Sublime
+#### Sublime implementation
 Install [LSP Package](https://lsp.sublimetext.io/) and create the following configuration:
 ```json
 {
