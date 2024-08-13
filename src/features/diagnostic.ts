@@ -47,6 +47,10 @@ async function lookupErrors(document: TextDocument): Promise<Diagnostic[]> {
 export function activate(context: IContext) {
   context.connection.languages.diagnostics.on(
     async (params: DocumentDiagnosticParams) => {
+      if (!context.getConfiguration().diagnostic) {
+        return;
+      }
+
       const document = await context.fs.getTextDocument(
         params.textDocument.uri
       );

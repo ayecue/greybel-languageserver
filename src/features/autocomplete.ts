@@ -56,6 +56,10 @@ export const getDefaultCompletionList = (): CompletionItem[] => {
 export function activate(context: IContext) {
   context.connection.onCompletion(
     async (params: TextDocumentPositionParams) => {
+      if (!context.getConfiguration().autocomplete) {
+        return;
+      }
+
       const document = await context.fs.getTextDocument(
         params.textDocument.uri
       );

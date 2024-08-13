@@ -83,6 +83,10 @@ export function activate(context: IContext) {
   }
 
   context.connection.onHover(async (params: HoverParams): Promise<Hover> => {
+    if (!context.getConfiguration().hoverdocs) {
+      return;
+    }
+
     const document = await context.fs.getTextDocument(params.textDocument.uri);
     const helper = new LookupHelper(document);
     const astResult = helper.lookupAST(params.position);

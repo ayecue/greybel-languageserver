@@ -12,7 +12,7 @@ import { IConfiguration, IContext } from '../types';
 export function activate(context: IContext) {
   async function tryFormat(content: string): Promise<string | null> {
     try {
-      const config: IConfiguration = await context.getConfiguration();
+      const config: IConfiguration = context.getConfiguration();
 
       return new DirectTranspiler({
         code: content,
@@ -31,6 +31,10 @@ export function activate(context: IContext) {
 
   context.connection.onDocumentFormatting(
     async (params: DocumentFormattingParams) => {
+      if (!context.getConfiguration().formatter) {
+        return;
+      }
+
       const document = await context.fs.getTextDocument(
         params.textDocument.uri
       );

@@ -1,4 +1,4 @@
-export type { IndentationType, IConfiguration, IContext, IFileSystem, IContextFeatures, LanguageId } from './types';
+export type { IndentationType, IConfiguration, IContext, IFileSystem, IContextFeatures, LanguageId, ConfigurationNamespace } from './types';
 export type { GenericContext } from './context/generic';
 export type { BrowserContext } from './context/browser';
 export type { FileSystem as BrowserFileSystem } from './context/browser/fs';

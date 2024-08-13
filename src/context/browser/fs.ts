@@ -88,17 +88,17 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     this._textDocumentManager.listen(connection);
     this._textDocumentManager.onDidOpen(
       (event: TextDocumentChangeEvent<TextDocument>) => {
-        this.emit('textDocument-open', event.document);
+        this.emit('text-document-open', event.document);
       }
     );
     this._textDocumentManager.onDidChangeContent(
       (event: TextDocumentChangeEvent<TextDocument>) => {
-        this.emit('textDocument-change', event.document);
+        this.emit('text-document-change', event.document);
       }
     );
     this._textDocumentManager.onDidClose(
       (event: TextDocumentChangeEvent<TextDocument>) => {
-        this.emit('textDocument-close', event.document);
+        this.emit('text-document-close', event.document);
       }
     );
   }

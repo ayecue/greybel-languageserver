@@ -7,6 +7,8 @@ import { URI } from 'vscode-uri';
 
 export type LanguageId = 'greyscript';
 export const LanguageId: LanguageId = 'greyscript';
+export type ConfigurationNamespace = 'greybel';
+export const ConfigurationNamespace: ConfigurationNamespace = 'greybel';
 
 export enum IndentationType {
   Tab = 'Tab',
@@ -33,7 +35,7 @@ export interface IContext extends EventEmitter {
 
   features: IContextFeatures;
 
-  getConfiguration(): Promise<IConfiguration>;
+  getConfiguration(): IConfiguration;
   listen(): Promise<void>;
 }
 

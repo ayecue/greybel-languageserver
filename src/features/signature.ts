@@ -26,6 +26,10 @@ const getClosestCallExpression = (
 
 export function activate(context: IContext) {
   context.connection.onSignatureHelp(async (params: SignatureHelpParams) => {
+    if (!context.getConfiguration().autocomplete) {
+      return;
+    }
+
     const document = await context.fs.getTextDocument(params.textDocument.uri);
     await documentManager.getLatest(document);
     const helper = new LookupHelper(document);

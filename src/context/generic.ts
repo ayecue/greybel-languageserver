@@ -1,13 +1,17 @@
 import EventEmitter from 'events';
+import { schedule } from 'non-blocking-schedule';
 import type {
   ClientCapabilities,
   createConnection,
+  DidChangeConfigurationParams,
+  InitializedParams,
   InitializeParams,
   InitializeResult
 } from 'vscode-languageserver';
 import { TextDocumentSyncKind } from 'vscode-languageserver';
 
 import {
+  ConfigurationNamespace,
   IConfiguration,
   IContext,
   IContextFeatures,
@@ -37,10 +41,12 @@ export abstract class GenericContext extends EventEmitter implements IContext {
   abstract readonly fs: IFileSystem;
 
   protected _features: IContextFeatures;
+  protected _configuration: IConfiguration;
 
   constructor() {
     super();
 
+    this._configuration = defaultConfig();
     this._features = {
       configuration: false,
       workspaceFolder: false
@@ -51,9 +57,8 @@ export abstract class GenericContext extends EventEmitter implements IContext {
     return this._features;
   }
 
-  getConfiguration(): Promise<IConfiguration> {
-    if (!this._features.configuration) return Promise.resolve(defaultConfig());
-    return this.connection.workspace.getConfiguration('greybel');
+  getConfiguration(): IConfiguration {
+    return this._configuration;
   }
 
   protected configureCapabilties(capabilities: ClientCapabilities) {
@@ -65,7 +70,7 @@ export abstract class GenericContext extends EventEmitter implements IContext {
     );
   }
 
-  protected onInitialize(params: InitializeParams) {
+  protected async onInitialize(params: InitializeParams) {
     this.configureCapabilties(params.capabilities);
 
     const result: InitializeResult = {
@@ -105,9 +110,32 @@ export abstract class GenericContext extends EventEmitter implements IContext {
     return result;
   }
 
+  protected async onInitialized(_params: InitializedParams) {
+    if (this._features.configuration) {
+      this._configuration = await this.connection.workspace.getConfiguration(
+        ConfigurationNamespace
+      );
+      this.connection.onDidChangeConfiguration(async () => {
+        const oldConfiguration = this._configuration;
+        this._configuration = await this.connection.workspace.getConfiguration(
+          ConfigurationNamespace
+        );
+        this.emit(
+          'configuration-change',
+          this,
+          this._configuration,
+          oldConfiguration
+        );
+      });
+    }
+
+    this.emit('loaded', this);
+  }
+
   async listen() {
     this.fs.listen(this.connection);
     this.connection.onInitialize(this.onInitialize.bind(this));
+    this.connection.onInitialized(this.onInitialized.bind(this));
     this.connection.listen();
   }
 }
