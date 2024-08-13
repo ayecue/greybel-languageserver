@@ -4,7 +4,7 @@
 
 Language server for GreyScript. Provides several features such as auto-completion, hover tooltips and more.
 
-Feel free to take a look at the [implementation](https://github.com/ayecue/greybel-vs). Should work with any other client which is following [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide).
+Should work with any other client which is following [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide). Feel free to take a look at a full [implementation](https://github.com/ayecue/greybel-vs) into VSCode.
 
 ## Supported providers
 
@@ -37,6 +37,8 @@ Currently, there are two server client versions. The reason for this is that VSC
 In case it is required to have the language server running within the context of a browser you have to use the `dist/browser.js` file.
 
 If you want to use the language server for local development go ahead and use `dist/node.js`.
+
+You can find some examples below.
 
 #### VSCode implementation
 ```ts
