@@ -106,3 +106,24 @@ contexts:
     - match: '.+'
       scope: text.greyscript
 ```
+
+## How to add tooltips
+
+You can add your own meta descriptions in [this repository](https://github.com/ayecue/miniscript-meta). The workflow for this is as follows:
+- create a PR with your changes in the [meta repository](https://github.com/ayecue/miniscript-meta)
+- create a PR with the raised version to this repository
+
+Additionally, there is the option to define methods via comments in the code.
+
+```js
+// Hello world
+// I am **bold**
+// @description Alternative description
+// @example test("title", 123)
+// @param {string} title - The title of the book.
+// @param {string|number} author - The author of the book.
+// @return {crypto} - Some info about return
+test = function(test, abc)
+  print(test)
+end function
+```

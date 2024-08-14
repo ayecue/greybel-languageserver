@@ -1,5 +1,5 @@
 import { CompletionItem, CompletionItemKind } from 'vscode-languageserver/node';
-import { GreybelKeyword, Keyword } from 'greybel-core';
+import { GreybelKeyword } from 'greybel-core';
 import { GreyScriptKeyword } from 'greyscript-core';
 import { Keyword as CoreKeyword } from 'miniscript-core';
 

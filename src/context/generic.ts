@@ -1,9 +1,7 @@
 import EventEmitter from 'events';
-import { schedule } from 'non-blocking-schedule';
 import type {
   ClientCapabilities,
   createConnection,
-  DidChangeConfigurationParams,
   InitializedParams,
   InitializeParams,
   InitializeResult
