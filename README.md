@@ -109,8 +109,8 @@ contexts:
 
 ## How to add tooltips
 
-You can add your own meta descriptions in [this repository](https://github.com/ayecue/miniscript-meta). The workflow for this is as follows:
-- create a PR with your changes in the [meta repository](https://github.com/ayecue/miniscript-meta)
+You can add your own meta descriptions in [this repository](https://github.com/ayecue/greyscript-meta). The workflow for this is as follows:
+- create a PR with your changes in the [meta repository](https://github.com/ayecue/greyscript-meta)
 - create a PR with the raised version to this repository
 
 Additionally, there is the option to define methods via comments in the code.
