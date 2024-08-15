@@ -18,17 +18,18 @@ import {
   LanguageId
 } from '../types';
 
-function defaultConfig(): IConfiguration {
+function createConfig(preset?: IConfiguration): IConfiguration {
   return {
-    formatter: true,
-    autocomplete: true,
-    hoverdocs: true,
-    diagnostic: true,
+    formatter: preset?.formatter ?? true,
+    autocomplete: preset?.autocomplete ?? true,
+    hoverdocs: preset?.hoverdocs ?? true,
+    diagnostic: preset?.diagnostic ?? true,
     transpiler: {
       beautify: {
-        keepParentheses: true,
-        indentation: IndentationType.Tab,
-        indentationSpaces: 2
+        keepParentheses: preset?.transpiler?.beautify?.keepParentheses ?? true,
+        indentation:
+          preset?.transpiler?.beautify?.indentation ?? IndentationType.Tab,
+        indentationSpaces: preset?.transpiler?.beautify?.indentationSpaces ?? 2
       }
     }
   };
@@ -44,7 +45,7 @@ export abstract class GenericContext extends EventEmitter implements IContext {
   constructor() {
     super();
 
-    this._configuration = defaultConfig();
+    this._configuration = createConfig();
     this._features = {
       configuration: false,
       workspaceFolder: false
@@ -57,6 +58,12 @@ export abstract class GenericContext extends EventEmitter implements IContext {
 
   getConfiguration(): IConfiguration {
     return this._configuration;
+  }
+
+  protected async syncConfiguraton() {
+    const configuration: IConfiguration =
+      await this.connection.workspace.getConfiguration(ConfigurationNamespace);
+    this._configuration = createConfig(configuration);
   }
 
   protected configureCapabilties(capabilities: ClientCapabilities) {
@@ -110,14 +117,10 @@ export abstract class GenericContext extends EventEmitter implements IContext {
 
   protected async onInitialized(_params: InitializedParams) {
     if (this._features.configuration) {
-      this._configuration = await this.connection.workspace.getConfiguration(
-        ConfigurationNamespace
-      );
+      await this.syncConfiguraton();
       this.connection.onDidChangeConfiguration(async () => {
         const oldConfiguration = this._configuration;
-        this._configuration = await this.connection.workspace.getConfiguration(
-          ConfigurationNamespace
-        );
+        await this.syncConfiguraton();
         this.emit(
           'configuration-change',
           this,
