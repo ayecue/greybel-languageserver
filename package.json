@@ -1,6 +1,6 @@
 {
   "name": "greybel-languageserver",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Language Server for GreyScript",
   "browser": "./browser.js",
   "main": "./node.js",

@@ -17,6 +17,10 @@ const build = async () => {
         target: 'ESNext',
         platform: 'browser',
         treeShaking: true,
+        external: [
+          'vscode-languageserver',
+          'vscode-languageserver-textdocument'
+        ],
         plugins: [
           polyfillNode({
             globals: false

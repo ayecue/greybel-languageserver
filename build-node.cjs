@@ -15,7 +15,11 @@ const build = async () => {
         minifySyntax: true,
         target: 'ESNext',
         platform: 'node',
-        treeShaking: true
+        treeShaking: true,
+        external: [
+          'vscode-languageserver',
+          'vscode-languageserver-textdocument'
+        ]
       });
   } catch (err) {
     console.error('Failed building project', { err });
