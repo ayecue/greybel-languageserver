@@ -17,6 +17,7 @@ const build = async () => {
         target: 'ESNext',
         platform: 'browser',
         treeShaking: true,
+        format: 'esm',
         external: [
           'vscode-languageserver/node',
         ],
