@@ -6,13 +6,13 @@ import {
   ASTPosition,
   ASTType
 } from 'miniscript-core';
-import {
+import type {
   ColorInformation,
   ColorPresentationParams,
   DocumentColorParams,
   Position,
   Range
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver';
 
 import documentManager from '../helper/document-manager';
 import { IContext } from '../types';

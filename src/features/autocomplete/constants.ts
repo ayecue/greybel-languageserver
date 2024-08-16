@@ -1,4 +1,4 @@
-import { CompletionItem, CompletionItemKind } from 'vscode-languageserver/node';
+import type { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
 
 export const AVAILABLE_CONSTANTS: CompletionItem[] = [
   'true',
@@ -11,6 +11,6 @@ export const AVAILABLE_CONSTANTS: CompletionItem[] = [
 ].map((item: string) => {
   return {
     label: item,
-    kind: CompletionItemKind.Constant
+    kind: 21 // CompletionItemKind.Constant
   };
 });

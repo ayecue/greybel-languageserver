@@ -1,10 +1,6 @@
 import { BuildType } from 'greybel-transpiler';
 import { DirectTranspiler } from 'greyscript-transpiler';
-import {
-  DocumentFormattingParams,
-  Range,
-  TextEdit
-} from 'vscode-languageserver/node';
+import type { DocumentFormattingParams, Range } from 'vscode-languageserver';
 
 import documentManager from '../helper/document-manager';
 import { IConfiguration, IContext } from '../types';
@@ -50,7 +46,12 @@ export function activate(context: IContext) {
         end: activeDocument.document.end
       };
 
-      return [TextEdit.replace(textRange, result)];
+      return [
+        {
+          range: textRange,
+          newText: result
+        }
+      ];
     }
   );
 }

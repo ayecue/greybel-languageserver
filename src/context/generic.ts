@@ -6,7 +6,6 @@ import type {
   InitializeParams,
   InitializeResult
 } from 'vscode-languageserver';
-import { TextDocumentSyncKind } from 'vscode-languageserver';
 
 import {
   ConfigurationNamespace,
@@ -98,7 +97,7 @@ export abstract class GenericContext extends EventEmitter implements IContext {
           interFileDependencies: false,
           workspaceDiagnostics: false
         },
-        textDocumentSync: TextDocumentSyncKind.Incremental
+        textDocumentSync: 2 // incremental
       }
     };
 

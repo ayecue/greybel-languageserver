@@ -1,5 +1,5 @@
 import { ASTBase, ASTCallExpression, ASTType } from 'miniscript-core';
-import { SignatureHelp, SignatureHelpParams } from 'vscode-languageserver/node';
+import type { SignatureHelp, SignatureHelpParams } from 'vscode-languageserver';
 
 import documentManager from '../helper/document-manager';
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';

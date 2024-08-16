@@ -4,10 +4,10 @@ import {
   ASTMemberExpression
 } from 'miniscript-core';
 import { CompletionItem as EntityCompletionItem } from 'miniscript-type-analyzer';
-import {
+import type {
   CompletionItem,
   TextDocumentPositionParams
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver';
 
 import documentManager from '../helper/document-manager';
 import { getCompletionItemKind } from '../helper/kind';

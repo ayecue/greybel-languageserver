@@ -3,11 +3,11 @@ import {
   ASTBaseBlockWithScope,
   ASTMemberExpression
 } from 'miniscript-core';
-import {
+import type {
   DefinitionLink,
   DefinitionParams,
   Position
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver';
 
 import documentManager from '../helper/document-manager';
 import { LookupHelper } from '../helper/lookup-type';

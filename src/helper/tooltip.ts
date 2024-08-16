@@ -4,11 +4,11 @@ import {
   SignatureDefinitionTypeMeta
 } from 'meta-utils';
 import { IEntity } from 'miniscript-type-analyzer';
-import {
+import type {
   Hover,
   ParameterInformation,
   SignatureInformation
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver';
 
 import { LanguageId } from '../types';
 import { MarkdownString } from './markdown-string';

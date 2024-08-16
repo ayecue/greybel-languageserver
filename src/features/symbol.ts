@@ -1,11 +1,10 @@
 import { ASTAssignmentStatement } from 'miniscript-core';
 import { createExpressionId } from 'miniscript-type-analyzer';
-import {
+import type {
   DocumentSymbolParams,
   SymbolInformation,
-  SymbolKind,
   WorkspaceSymbolParams
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import documentManager from '../helper/document-manager';
@@ -25,9 +24,7 @@ const findAllAssignments = (
     const assignment = assignmentItem as ASTAssignmentStatement;
     const entity = typeDoc.resolveNamespace(assignment.variable, true);
     const label = entity?.label ?? createExpressionId(assignmentItem.variable);
-    const kind = entity?.kind
-      ? getSymbolItemKind(entity.kind)
-      : SymbolKind.Variable;
+    const kind = entity?.kind ? getSymbolItemKind(entity.kind) : 13; // SymbolKind.Variable
 
     const start = {
       line: assignment.variable.start.line - 1,

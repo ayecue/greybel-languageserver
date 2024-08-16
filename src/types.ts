@@ -1,7 +1,7 @@
 import { EventEmitter } from "stream";
-import {
+import type {
   createConnection
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 

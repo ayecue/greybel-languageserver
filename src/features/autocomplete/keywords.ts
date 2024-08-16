@@ -1,4 +1,4 @@
-import { CompletionItem, CompletionItemKind } from 'vscode-languageserver/node';
+import type { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
 import { GreybelKeyword } from 'greybel-core';
 import { GreyScriptKeyword } from 'greyscript-core';
 import { Keyword as CoreKeyword } from 'miniscript-core';
@@ -30,6 +30,6 @@ export const AVAILABLE_KEYWORDS: CompletionItem[] = [
 ].map((item: string) => {
   return {
     label: item,
-    kind: CompletionItemKind.Keyword
+    kind: 14 // CompletionItemKind.Keyword
   };
 });

@@ -1,23 +1,23 @@
 import { CompletionItemKind as EntityCompletionItemKind } from 'miniscript-type-analyzer';
-import { CompletionItemKind, SymbolKind } from 'vscode-languageserver/node';
+import type { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
 
 export const getCompletionItemKind = (
   kind: EntityCompletionItemKind
 ): CompletionItemKind => {
   switch (kind) {
     case EntityCompletionItemKind.Constant:
-      return CompletionItemKind.Constant;
+      return 21; // CompletionItemKind.Constant
     case EntityCompletionItemKind.Variable:
-      return CompletionItemKind.Variable;
+      return 6; // CompletionItemKind.Variable
     case EntityCompletionItemKind.Expression:
-      return CompletionItemKind.Variable;
+      return 6; // CompletionItemKind.Variable
     case EntityCompletionItemKind.Function:
-      return CompletionItemKind.Function;
+      return 3; // CompletionItemKind.Function
     case EntityCompletionItemKind.ListConstructor:
     case EntityCompletionItemKind.MapConstructor:
     case EntityCompletionItemKind.Literal:
     case EntityCompletionItemKind.Unknown:
-      return CompletionItemKind.Value;
+      return 12; // CompletionItemKind.Value
   }
 };
 
@@ -26,19 +26,19 @@ export const getSymbolItemKind = (
 ): SymbolKind => {
   switch (kind) {
     case EntityCompletionItemKind.Constant:
-      return SymbolKind.Constant;
+      return 14; // SymbolKind.Constant
     case EntityCompletionItemKind.Variable:
-      return SymbolKind.Variable;
+      return 13; // SymbolKind.Variable
     case EntityCompletionItemKind.Expression:
-      return SymbolKind.Variable;
+      return 13; // SymbolKind.Variable
     case EntityCompletionItemKind.Function:
-      return SymbolKind.Function;
+      return 12; // SymbolKind.Function
     case EntityCompletionItemKind.ListConstructor:
-      return SymbolKind.Array;
+      return 18; // SymbolKind.Array
     case EntityCompletionItemKind.MapConstructor:
-      return SymbolKind.Object;
+      return 19; // SymbolKind.Object
     case EntityCompletionItemKind.Literal:
     case EntityCompletionItemKind.Unknown:
-      return SymbolKind.Variable;
+      return 13; // SymbolKind.Variable
   }
 };

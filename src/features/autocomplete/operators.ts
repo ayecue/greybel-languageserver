@@ -1,4 +1,4 @@
-import { CompletionItem, CompletionItemKind } from 'vscode-languageserver/node';
+import type { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
 import { Operator as GreybelOperators } from 'greybel-core/dist/types/operators';
 import { Operator } from 'miniscript-core';
 
@@ -29,6 +29,6 @@ export const AVAILABLE_OPERATORS: CompletionItem[] = [
 ].map((item: string) => {
   return {
     label: item,
-    kind: CompletionItemKind.Operator
+    kind: 24 // CompletionItemKind.Operator
   };
 });
