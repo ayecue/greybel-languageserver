@@ -17,8 +17,7 @@ const build = async () => {
         platform: 'node',
         treeShaking: true,
         external: [
-          'vscode-languageserver',
-          'vscode-languageserver-textdocument'
+          'vscode-languageserver/browser'
         ]
       });
   } catch (err) {

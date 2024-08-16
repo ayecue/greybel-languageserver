@@ -18,8 +18,7 @@ const build = async () => {
         platform: 'browser',
         treeShaking: true,
         external: [
-          'vscode-languageserver',
-          'vscode-languageserver-textdocument'
+          'vscode-languageserver/node',
         ],
         plugins: [
           polyfillNode({
