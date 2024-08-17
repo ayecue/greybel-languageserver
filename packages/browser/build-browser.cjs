@@ -7,7 +7,7 @@ const build = async () => {
       .build({
         entryPoints: ['./dist/index.js'],
         bundle: true,
-        outfile: 'index.mjs',
+        outfile: 'index.js',
         globalName: 'greybelLanguageserver',
         sourcemap: false,
         minify: false,
@@ -17,7 +17,7 @@ const build = async () => {
         target: 'es6',
         platform: 'browser',
         treeShaking: true,
-        format: 'esm',
+        format: 'cjs',
         external: [
           'vscode-languageserver/node',
         ],
