@@ -14,3 +14,4 @@ testing2.src
 tsconfig.json
 .eslintrc
 .circleci
+build-browser.cjs
