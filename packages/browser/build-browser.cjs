@@ -14,9 +14,9 @@ const build = async () => {
         minifyIdentifiers: false,
         minifySyntax: false,
         target: 'es6',
-        platform: 'node',
+        platform: 'browser',
         treeShaking: true,
-        format: 'esm',
+        format: 'iife',
         external: [
           'vscode-languageserver/node',
         ],
