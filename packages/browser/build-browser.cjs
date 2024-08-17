@@ -14,7 +14,7 @@ const build = async () => {
         minifyIdentifiers: false,
         minifySyntax: false,
         target: 'es6',
-        platform: 'browser',
+        platform: 'node',
         treeShaking: true,
         format: 'esm',
         external: [
