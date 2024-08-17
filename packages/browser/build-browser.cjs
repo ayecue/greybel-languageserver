@@ -13,13 +13,10 @@ const build = async () => {
         minifyWhitespace: false,
         minifyIdentifiers: false,
         minifySyntax: false,
-        target: 'es6',
+        target: 'esnext',
         platform: 'browser',
         treeShaking: true,
-        format: 'iife',
-        external: [
-          'vscode-languageserver/node',
-        ],
+        format: 'esm',
         plugins: [
           polyfillNode({
             globals: false
