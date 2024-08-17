@@ -2,8 +2,8 @@
   "name": "greybel-languageserver-browser",
   "version": "0.1.0",
   "description": "Language server for GreyScript",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "main": "./index.mjs",
+  "type": "module",
   "scripts": {
     "prepublishOnly": "npm run build",
     "build": "npm run build:ts && npm run build:browser",

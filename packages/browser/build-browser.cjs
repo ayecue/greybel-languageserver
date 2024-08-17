@@ -7,7 +7,7 @@ const build = async () => {
       .build({
         entryPoints: ['./dist/index.js'],
         bundle: true,
-        outfile: 'index.js',
+        outfile: 'index.mjs',
         globalName: 'greybelLanguageserver',
         sourcemap: false,
         minify: false,
