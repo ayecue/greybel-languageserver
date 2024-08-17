@@ -13,10 +13,10 @@ const build = async () => {
         minifyWhitespace: false,
         minifyIdentifiers: false,
         minifySyntax: false,
-        target: 'esnext',
+        target: 'es6',
         platform: 'browser',
         treeShaking: true,
-        format: 'esm',
+        format: 'iife',
         plugins: [
           polyfillNode({
             globals: false
