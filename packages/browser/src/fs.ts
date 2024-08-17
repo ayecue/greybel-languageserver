@@ -6,6 +6,10 @@ import LRUCache from "lru-cache";
 
 import { IContext, IFileSystem, LanguageId } from "greybel-languageserver-core";
 
+export enum FileSystemRequest {
+  FileContent = 'read-file'
+}
+
 export class FileSystem extends EventEmitter implements IFileSystem {
   private _context: IContext;
   private _tempTextDocumentCache: LRUCache<string, TextDocument>;
@@ -48,6 +52,17 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     return this._textDocumentManager.all();
   }
 
+  private async requestFileContent(fileUri: URI): Promise<string | null> {
+    const method = `custom/${FileSystemRequest.FileContent}`;
+
+    try {
+      return await this._context.connection.sendRequest(method, fileUri.toString());
+    } catch (err) {
+      console.error(`Cannot fetch text document! Maybe the client does not support ${method}`, err);
+      return null;
+    }
+  }
+
   async fetchTextDocument(targetUri: string): Promise<TextDocument> {
     const uri = URI.parse(targetUri);
     const cachedTextDocument = this._tempTextDocumentCache.get(targetUri);
@@ -57,13 +72,11 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     }
 
     let tempDoc: TextDocument | null = null;
+    const content = await this.requestFileContent(uri);
 
-    try {
-      const out = await fetch(uri.toString());
-      const content = await out.text();
-
+    if (content != null) {
       tempDoc = TextDocument.create(targetUri, LanguageId, 0, content);
-    } catch (err) { }
+    }
 
     this._tempTextDocumentCache.set(targetUri, tempDoc);
 
