@@ -5,9 +5,9 @@ const build = async () => {
   try {
     await esbuild
       .build({
-        entryPoints: ['./dist/browser.js'],
+        entryPoints: ['./dist/index.js'],
         bundle: true,
-        outfile: 'browser.js',
+        outfile: 'index.js',
         globalName: 'greybelLanguageserver',
         sourcemap: false,
         minify: false,

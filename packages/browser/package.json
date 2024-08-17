@@ -6,7 +6,9 @@
   "typings": "./dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "tsc -p ./",
+    "build": "npm run build:ts && npm run build:browser",
+    "build:ts": "tsc -p ./",
+    "build:browser": "node build-browser.cjs",
     "lint": "eslint ./src/**/*.ts",
     "lint:fix": "eslint --fix ./src/**/*.ts",
     "clean": "rm -rf dist",
