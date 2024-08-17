@@ -3,7 +3,6 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import EventEmitter from "events";
 import { URI } from "vscode-uri";
 import fs from "fs";
-import { TextDecoder } from 'text-encoder-lite';
 
 import { IContext, IFileSystem, LanguageId } from "greybel-languageserver-core";
 import LRUCache from "lru-cache";
@@ -61,11 +60,11 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     let tempDoc: TextDocument | null = null;
 
     try {
-      const out = await fs.promises.readFile(uri.fsPath);
-      const content = new TextDecoder().decode(out);
-
+      const content = await fs.promises.readFile(uri.fsPath, { encoding: 'utf-8' });
       tempDoc = TextDocument.create(targetUri, LanguageId, 0, content);
-    } catch (err) { }
+    } catch (err) {
+      console.error(err);
+    }
 
     this._tempTextDocumentCache.set(targetUri, tempDoc);
 
