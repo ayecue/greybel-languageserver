@@ -4,7 +4,7 @@ import EventEmitter from "events";
 import { URI } from "vscode-uri";
 import LRUCache from "lru-cache";
 
-import { IContext, IFileSystem, LanguageId } from "../../types";
+import { IContext, IFileSystem, LanguageId } from "greybel-languageserver-core";
 
 export class FileSystem extends EventEmitter implements IFileSystem {
   private _context: IContext;

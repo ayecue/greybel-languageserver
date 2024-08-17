@@ -13,6 +13,3 @@ testing2.src
 tsconfig.json
 .eslintrc
 .circleci
-dist
-build-browser.cjs
-build-node.cjs

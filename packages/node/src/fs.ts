@@ -3,8 +3,9 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import EventEmitter from "events";
 import { URI } from "vscode-uri";
 import fs from "fs";
+import { TextDecoder } from 'text-encoder-lite';
 
-import { IContext, IFileSystem, LanguageId } from "../../types";
+import { IContext, IFileSystem, LanguageId } from "greybel-languageserver-core";
 import LRUCache from "lru-cache";
 
 export class FileSystem extends EventEmitter implements IFileSystem {

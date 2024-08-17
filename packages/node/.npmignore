@@ -1,0 +1,15 @@
+.DS_Store
+node_modules
+out
+src
+tests
+test.src
+node_modules
+system.pem
+test.ts
+test.js
+testing.src
+testing2.src
+tsconfig.json
+.eslintrc
+.circleci

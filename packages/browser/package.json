@@ -1,15 +1,12 @@
 {
-  "name": "greybel-languageserver",
-  "version": "0.9.2",
-  "description": "Language Server for GreyScript",
-  "browser": "./browser.js",
-  "main": "./node.js",
+  "name": "greybel-languageserver-browser",
+  "version": "0.1.0",
+  "description": "Language server for GreyScript",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "npm run build:ts && npm run build:browser && npm run build:node",
-    "build:ts": "tsc -p ./",
-    "build:browser": "node build-browser.cjs",
-    "build:node": "node build-node.cjs",
+    "build": "tsc -p ./",
     "lint": "eslint ./src/**/*.ts",
     "lint:fix": "eslint --fix ./src/**/*.ts",
     "clean": "rm -rf dist",
@@ -19,19 +16,16 @@
   "engines": {
     "node": "*"
   },
-  "bin": {
-    "greybel-languageserver": "./bin/greybel-languageserver.js"
-  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayecue/greybel-languageserver.git"
+    "url": "git+https://github.com/ayecue/greybel-languageserver-browser.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ayecue/greybel-languageserver/issues"
+    "url": "https://github.com/ayecue/greybel-languageserver-browser/issues"
   },
-  "homepage": "https://github.com/ayecue/greybel-languageserver#readme",
+  "homepage": "https://github.com/ayecue/greybel-languageserver-browser#readme",
   "keywords": [
     "greybel",
     "greyscript",
@@ -58,6 +52,9 @@
     "@types/vscode": "^1.63.1",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
+    "esbuild": "0.21.0",
+    "esbuild-plugin-globals": "0.2.0",
+    "esbuild-plugin-polyfill-node": "0.3.0",
     "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard": "^17.0.0",
@@ -67,23 +64,13 @@
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-security": "^1.5.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
-    "esbuild": "0.21.0",
-    "esbuild-plugin-globals": "0.2.0",
-    "esbuild-plugin-polyfill-node": "0.3.0",
     "jest": "^27.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^4.5.4"
   },
   "dependencies": {
-    "color-convert": "^2.0.1",
-    "crlf-normalize": "^1.0.20",
-    "greyscript-core": "^2.0.3",
-    "greyscript-meta": "~4.0.10",
-    "greyscript-transpiler": "~1.0.8",
+    "greybel-languageserver-core": "^0.1.0",
     "lru-cache": "^7.18.3",
-    "miniscript-type-analyzer": "~0.8.2",
-    "non-blocking-schedule": "^0.1.0",
-    "text-encoder-lite": "^2.0.0",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.11",
     "vscode-uri": "^3.0.8"

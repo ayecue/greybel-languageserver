@@ -1,7 +1,7 @@
 {
-  "name": "greybel-languageserver-core",
+  "name": "greybel-languageserver",
   "version": "0.1.0",
-  "description": "Core functionality of language server for GreyScript",
+  "description": "Language server for GreyScript",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
   "scripts": {
@@ -13,19 +13,22 @@
     "test": "jest ./tests",
     "watch": "tsc -watch -p ./"
   },
+  "bin": {
+    "greybel-languageserver": "./bin/greybel-languageserver.js"
+  },
   "engines": {
     "node": "*"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayecue/greybel-languageserver-core.git"
+    "url": "git+https://github.com/ayecue/greybel-languageserver.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ayecue/greybel-languageserver-core/issues"
+    "url": "https://github.com/ayecue/greybel-languageserver/issues"
   },
-  "homepage": "https://github.com/ayecue/greybel-languageserver-core#readme",
+  "homepage": "https://github.com/ayecue/greybel-languageserver#readme",
   "keywords": [
     "greybel",
     "greyscript",
@@ -52,6 +55,9 @@
     "@types/vscode": "^1.63.1",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
+    "esbuild": "0.21.0",
+    "esbuild-plugin-globals": "0.2.0",
+    "esbuild-plugin-polyfill-node": "0.3.0",
     "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard": "^17.0.0",
@@ -61,22 +67,14 @@
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-security": "^1.5.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
-    "esbuild": "0.21.0",
-    "esbuild-plugin-globals": "0.2.0",
-    "esbuild-plugin-polyfill-node": "0.3.0",
     "jest": "^27.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^4.5.4"
   },
   "dependencies": {
-    "color-convert": "^2.0.1",
-    "crlf-normalize": "^1.0.20",
-    "greyscript-core": "^2.0.3",
-    "greyscript-meta": "~4.0.10",
-    "greyscript-transpiler": "~1.0.8",
+    "text-encoder-lite": "^2.0.0",
+    "greybel-languageserver-core": "^0.1.0",
     "lru-cache": "^7.18.3",
-    "miniscript-type-analyzer": "~0.8.2",
-    "non-blocking-schedule": "^0.1.0",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.11",
     "vscode-uri": "^3.0.8"
