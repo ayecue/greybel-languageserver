@@ -42,7 +42,7 @@ export async function buildTypeDocument(
   }
 
   const externalTypeDocs = [];
-  const allImports = await this.context.documentManager.get(document).getImports();
+  const allImports = await context.documentManager.get(document).getImports();
 
   await Promise.all(
     allImports.map(async (item) => {
