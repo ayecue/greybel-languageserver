@@ -177,6 +177,7 @@ export const PROCESSING_TIMEOUT = 100;
 export class DocumentManager extends EventEmitter implements IDocumentManager {
   readonly results: LRU<string, ActiveDocument>;
 
+  private _timer: NodeJS.Timeout;
   private _context: IContext | null;
   private scheduledItems: Map<string, ScheduledItem>;
   private tickRef: () => void;
@@ -194,6 +195,7 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
   constructor(processingTimeout: number = PROCESSING_TIMEOUT) {
     super();
     this._context = null;
+    this._timer = null;
     this.results = new LRU({
       ttl: 1000 * 60 * 20,
       ttlAutopurge: true
@@ -201,11 +203,14 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
     this.scheduledItems = new Map();
     this.tickRef = this.tick.bind(this);
     this.processingTimeout = processingTimeout;
-
-    schedule(this.tickRef);
   }
 
   private tick() {
+    if (this.scheduledItems.size === 0) {
+      this._timer = null;
+      return;
+    }
+
     const currentTime = Date.now();
     const items = Array.from(this.scheduledItems.values());
 
@@ -216,7 +221,7 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
       }
     }
 
-    schedule(this.tickRef);
+    this._timer = setTimeout(this.tickRef, 0);
   }
 
   refresh(document: TextDocument): ActiveDocument {
@@ -289,6 +294,10 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
       document,
       createdAt: Date.now()
     });
+
+    if (this._timer === null) {
+      this._timer = setTimeout(this.tickRef, 0);
+    }
 
     return true;
   }
