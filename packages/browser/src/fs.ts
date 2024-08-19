@@ -63,7 +63,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     }
   }
 
-  async fetchTextDocument(targetUri: string): Promise<TextDocument> {
+  async fetchTextDocument(targetUri: string): Promise<TextDocument | null> {
     const uri = URI.parse(targetUri);
     const cachedTextDocument = this._tempTextDocumentCache.get(targetUri);
 
@@ -83,7 +83,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     return tempDoc;
   }
 
-  async getTextDocument(targetUri: string): Promise<TextDocument> {
+  async getTextDocument(targetUri: string): Promise<TextDocument | null> {
     const textDocument = this._textDocumentManager.get(targetUri);
     if (textDocument) return textDocument;
     const uri = URI.parse(targetUri);
