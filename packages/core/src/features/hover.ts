@@ -88,6 +88,11 @@ export function activate(context: IContext) {
     }
 
     const document = await context.fs.getTextDocument(params.textDocument.uri);
+
+    if (document == null) {
+      return;
+    }
+
     const helper = new LookupHelper(document, context);
     const astResult = helper.lookupAST(params.position);
 

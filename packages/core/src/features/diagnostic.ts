@@ -51,6 +51,11 @@ export function activate(context: IContext) {
       const document = await context.fs.getTextDocument(
         params.textDocument.uri
       );
+
+      if (document == null) {
+        return;
+      }
+
       const diagnostics = await lookupErrors(document, context);
 
       if (diagnostics.length === 0) {

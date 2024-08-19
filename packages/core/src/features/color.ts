@@ -65,6 +65,11 @@ export function activate(context: IContext) {
     const textDocument = await context.fs.getTextDocument(
       params.textDocument.uri
     );
+
+    if (textDocument == null) {
+      return;
+    }
+
     const parseResult = await context.documentManager.getLatest(textDocument);
     const chunk = parseResult.document as ASTChunk;
     const allAvailableStrings = chunk.literals.filter(

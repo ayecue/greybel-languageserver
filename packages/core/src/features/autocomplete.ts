@@ -62,6 +62,11 @@ export function activate(context: IContext) {
       const document = await context.fs.getTextDocument(
         params.textDocument.uri
       );
+
+      if (document == null) {
+        return;
+      }
+
       // waiting for changes
       const activeDocument = await context.documentManager.getLatest(document);
 

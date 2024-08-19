@@ -48,11 +48,16 @@ const findAllDefinitions = (
 export function activate(context: IContext) {
   context.connection.onDefinition(async (params: DefinitionParams) => {
     const document = await context.fs.getTextDocument(params.textDocument.uri);
+
+    if (document == null) {
+      return;
+    }
+
     const helper = new LookupHelper(document, context);
     const astResult = helper.lookupAST(params.position);
 
     if (!astResult) {
-      return [];
+      return;
     }
 
     const { outer, closest } = astResult;
