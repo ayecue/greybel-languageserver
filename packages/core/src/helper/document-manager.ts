@@ -305,6 +305,11 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
   async open(target: string): Promise<ActiveDocument | null> {
     try {
       const textDocument = await this.context.fs.getTextDocument(target);
+
+      if (textDocument == null) {
+        return null;
+      }
+
       return this.get(textDocument);
     } catch (err) {
       return null;
