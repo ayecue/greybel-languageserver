@@ -22,6 +22,11 @@ const findAllAssignments = (
   for (const assignmentItem of assignments) {
     const assignment = assignmentItem as ASTAssignmentStatement;
     const entity = typeDoc.resolveNamespace(assignment.variable, true);
+
+    if (entity == null) {
+      continue;
+    }
+
     const label = entity?.label ?? createExpressionId(assignmentItem.variable);
     const kind = entity?.kind ? getSymbolItemKind(entity.kind) : 13; // SymbolKind.Variable
 
