@@ -63,7 +63,6 @@ export class FileSystem extends EventEmitter implements IFileSystem {
       const content = await fs.promises.readFile(uri.fsPath, { encoding: 'utf-8' });
       tempDoc = TextDocument.create(targetUri, LanguageId, 0, content);
     } catch (err) {
-      console.error(err);
     }
 
     this._tempTextDocumentCache.set(targetUri, tempDoc);
