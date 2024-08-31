@@ -32,6 +32,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
   async getWorkspaceFolderUris(): Promise<URI[]> {
     if (!this._context.features.workspaceFolder) return [];
     const result = await this._workspace.getWorkspaceFolders();
+    if (result == null) return [];
     return Array.from(new Set(result.map((it) => it.uri))).map((it) => URI.parse(it));
   }
 
