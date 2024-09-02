@@ -33,6 +33,11 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     return Array.from(new Set(result.map((it) => it.uri))).map((it) => URI.parse(it));
   }
 
+  async getWorkspaceFolderUri(source: URI): Promise<URI | null> {
+    const uris = await this.getWorkspaceFolderUris();
+    return uris.find(folderUri => source.path.startsWith(folderUri.path)) || null;
+  }
+
   findExistingPath(...uris: string[]): string {
     if (uris.length === 0) {
       return '';
