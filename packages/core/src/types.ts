@@ -1,6 +1,7 @@
 import type { EventEmitter } from "stream";
 import type {
-  createConnection
+  createConnection,
+  SemanticTokensBuilder
 } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { URI } from 'vscode-uri';
@@ -75,6 +76,7 @@ export interface IContext extends EventEmitter {
 
   features: IContextFeatures;
 
+  createSemanticTokensBuilder(): SemanticTokensBuilder;
   getConfiguration(): IConfiguration;
   listen(): Promise<void>;
 }
