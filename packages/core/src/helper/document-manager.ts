@@ -120,10 +120,12 @@ export class ActiveDocument implements IActiveDocument {
       return this.dependencies;
     }
 
-    const workspacePaths =
-      await this.documentManager.context.fs.getWorkspaceFolderUris();
-    const nativeImports = this.getNativeImports(workspacePaths[0]);
-    const importsAndIncludes = this.getImportsAndIncludes(workspacePaths[0]);
+    const workspacePathUri =
+      await this.documentManager.context.fs.getWorkspaceFolderUri(
+        URI.parse(this.textDocument.uri)
+      );
+    const nativeImports = this.getNativeImports(workspacePathUri);
+    const importsAndIncludes = this.getImportsAndIncludes(workspacePathUri);
     const dependencies: Set<string> = new Set([
       ...nativeImports,
       ...importsAndIncludes

@@ -41,9 +41,10 @@ export const createTooltipHeader = (
       (item) =>
         `${item.getLabel()}${item.isOptional() ? '?' : ''}: ${formatTypes(
           item.getTypes()
-        )}${item.getDefault()
-          ? ` = ${formatDefaultValue(item.getDefault().value)}`
-          : ''
+        )}${
+          item.getDefault()
+            ? ` = ${formatDefaultValue(item.getDefault().value)}`
+            : ''
         }`
     )
     .join(', ');

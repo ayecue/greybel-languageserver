@@ -18,9 +18,9 @@ import {
 } from 'miniscript-type-analyzer';
 import { Position, TextDocument } from 'vscode-languageserver-textdocument';
 
+import { IContext } from '../types';
 import * as ASTScraper from './ast-scraper';
 import typeManager, { lookupBase } from './type-manager';
-import { IContext } from '../types';
 
 export async function buildTypeDocument(
   document: TextDocument,
@@ -175,7 +175,8 @@ export class LookupHelper {
 
   lookupAST(position: Position): LookupASTResult | null {
     const me = this;
-    const chunk = this.context.documentManager.get(me.document).document as ASTChunk;
+    const chunk = this.context.documentManager.get(me.document)
+      .document as ASTChunk;
     const lineItems = chunk.lines[position.line + 1];
 
     if (!lineItems) {

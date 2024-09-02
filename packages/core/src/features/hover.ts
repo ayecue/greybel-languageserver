@@ -17,6 +17,22 @@ import { MarkdownString } from '../helper/markdown-string';
 import { createHover, formatTypes } from '../helper/tooltip';
 import { IContext, LanguageId } from '../types';
 
+const getRootDirectory = async (
+  context: IContext,
+  textDocument: TextDocument,
+  target: string
+) => {
+  const textDocumentUri = URI.parse(textDocument.uri);
+  const workspaceFolderUri =
+    await context.fs.getWorkspaceFolderUri(textDocumentUri);
+  if (workspaceFolderUri == null) {
+    return Utils.joinPath(textDocumentUri, '..');
+  }
+  return target.startsWith('/')
+    ? workspaceFolderUri
+    : Utils.joinPath(textDocumentUri, '..');
+};
+
 export function activate(context: IContext) {
   async function generateImportCodeHover(
     textDocument: TextDocument,
@@ -24,10 +40,11 @@ export function activate(context: IContext) {
   ): Promise<Hover> {
     const hoverText = new MarkdownString('');
     const importAst = astResult.closest as ASTImportCodeExpression;
-    const workspaceFolders = await context.fs.getWorkspaceFolderUris();
-    const rootDir = importAst.directory.startsWith('/')
-      ? workspaceFolders[0]
-      : Utils.joinPath(URI.parse(textDocument.uri), '..');
+    const rootDir = await getRootDirectory(
+      context,
+      textDocument,
+      importAst.directory
+    );
     const target = Utils.joinPath(rootDir, importAst.directory);
     const output = [
       `[Imports file "${path.basename(
@@ -56,10 +73,7 @@ export function activate(context: IContext) {
     const importCodeAst = astResult.closest as ASTFeatureImportExpression;
     const fileDir = importCodeAst.path;
 
-    const workspaceFolders = await context.fs.getWorkspaceFolderUris();
-    const rootDir = fileDir.startsWith('/')
-      ? workspaceFolders[0]
-      : Utils.joinPath(URI.parse(textDocument.uri), '..');
+    const rootDir = await getRootDirectory(context, textDocument, fileDir);
     const result = Utils.joinPath(rootDir, fileDir);
     const resultAlt = Utils.joinPath(rootDir, `${fileDir}`);
     const target = await context.fs.findExistingPath(

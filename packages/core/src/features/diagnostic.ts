@@ -7,7 +7,10 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { IContext } from '../types';
 
-async function lookupErrors(document: TextDocument, context: IContext): Promise<Diagnostic[]> {
+async function lookupErrors(
+  document: TextDocument,
+  context: IContext
+): Promise<Diagnostic[]> {
   const activeDocument = await context.documentManager.getLatest(document);
 
   return activeDocument.errors.map((err: any) => {
