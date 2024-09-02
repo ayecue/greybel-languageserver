@@ -28,7 +28,8 @@ export class DocumentURIBuilder {
 
   getFromWorkspaceFolder(path: string): string {
     if (this.workspaceFolderUri == null) {
-      throw new Error('Workspace folder is not defined!');
+      console.warn('Workspace folders are not available. Falling back to only relative paths.');
+      return Utils.joinPath(this.rootPath, path).toString();
     }
 
     return Utils.joinPath(this.workspaceFolderUri, path).toString();
