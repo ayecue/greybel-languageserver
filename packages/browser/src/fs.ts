@@ -41,17 +41,17 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     return uris.find(folderUri => source.path.startsWith(folderUri.path)) || null;
   }
 
-  findExistingPath(...uris: string[]): string {
+  async findExistingPath(...uris: string[]): Promise<string | null> {
     if (uris.length === 0) {
-      return '';
+      return null;
     }
 
     for (let index = 0; index < uris.length; index++) {
-      const item = this.getTextDocument(uris[index])
+      const item = await this.getTextDocument(uris[index])
       if (item != null) return uris[index];
     }
 
-    return uris[0];
+    return null;
   }
 
   getAllTextDocuments(): TextDocument[] {
