@@ -84,9 +84,19 @@ export class LookupHelper {
     identifier: string,
     root: ASTBaseBlockWithScope
   ): ASTAssignmentStatement[] {
-    return typeManager
-      .get(this.document.uri)
-      .getScopeContext(root)
+    const typeDoc = typeManager.get(this.document.uri);
+
+    if (typeDoc == null) {
+      return [];
+    }
+
+    const context = typeDoc.getScopeContext(root);
+
+    if (context == null) {
+      return [];
+    }
+
+    return context
       .aggregator.resolveAvailableAssignmentsWithQuery(identifier);
   }
 
@@ -94,15 +104,30 @@ export class LookupHelper {
     item: ASTBase,
     root: ASTBaseBlockWithScope
   ): ASTAssignmentStatement[] {
-    return typeManager
-      .get(this.document.uri)
-      .getScopeContext(root)
+    const typeDoc = typeManager.get(this.document.uri);
+
+    if (typeDoc == null) {
+      return [];
+    }
+
+    const context = typeDoc.getScopeContext(root);
+
+    if (context == null) {
+      return [];
+    }
+
+    return context
       .aggregator.resolveAvailableAssignments(item);
   }
 
   findAllAvailableIdentifierInRoot(): Map<string, CompletionItem> {
-    return typeManager
-      .get(this.document.uri)
+    const typeDoc = typeManager.get(this.document.uri);
+
+    if (typeDoc == null) {
+      return new Map();
+    }
+
+    return typeDoc
       .getRootScopeContext()
       .scope.getAllIdentifier();
   }
@@ -110,10 +135,15 @@ export class LookupHelper {
   findAllAvailableIdentifier(
     root: ASTBaseBlockWithScope
   ): Map<string, CompletionItem> {
-    return typeManager
+    const context = typeManager
       .get(this.document.uri)
-      .getScopeContext(root)
-      .scope.getAllIdentifier();
+      .getScopeContext(root);
+
+    if (context == null) {
+      return new Map();
+    }
+
+    return context.scope.getAllIdentifier();
   }
 
   findAllAvailableIdentifierRelatedToPosition(
@@ -121,7 +151,18 @@ export class LookupHelper {
   ): Map<string, CompletionItem> {
     const typeDoc = typeManager.get(this.document.uri);
     const result: Map<string, CompletionItem> = new Map();
+
+    for (const assignment of typeDoc.container.getAllIdentifier(
+      SignatureDefinitionBaseType.General
+    )) {
+      result.set(...assignment);
+    }
+
     const scopeContext = typeDoc.getScopeContext(item.scope);
+
+    if (scopeContext == null) {
+      return result;
+    }
 
     if (scopeContext.scope.isSelfAvailable()) {
       result.set('self', {
@@ -163,12 +204,6 @@ export class LookupHelper {
       injectIdentifers(result, scopeContext.scope.globals);
     if (scopeContext.scope.outer)
       injectIdentifers(result, scopeContext.scope.outer);
-
-    for (const assignment of typeDoc.container.getAllIdentifier(
-      SignatureDefinitionBaseType.General
-    )) {
-      result.set(...assignment);
-    }
 
     return result;
   }

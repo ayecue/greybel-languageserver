@@ -89,7 +89,7 @@ export class ActiveDocument implements IActiveDocument {
     const rootPath = this.getDirectory();
     const context = this.documentManager.context;
     const builder = new DocumentURIBuilder(rootPath, workspaceFolderUri);
-    const getPath = (path: string) => {
+    const getPath = (path: string): string | null => {
       if (path.startsWith('/')) {
         return context.fs.findExistingPath(
           builder.getFromWorkspaceFolder(path),
@@ -105,10 +105,12 @@ export class ActiveDocument implements IActiveDocument {
     return [
       ...rootChunk.imports
         .filter((nonNativeImport) => nonNativeImport.path)
-        .map((nonNativeImport) => getPath(nonNativeImport.path)),
+        .map((nonNativeImport) => getPath(nonNativeImport.path))
+        .filter((path) => path != null),
       ...rootChunk.includes
         .filter((includeImport) => includeImport.path)
         .map((includeImport) => getPath(includeImport.path))
+        .filter((path) => path != null)
     ];
   }
 

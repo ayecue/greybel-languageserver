@@ -45,11 +45,15 @@ export function activate(context: IContext) {
       textDocument,
       importAst.directory
     );
-    const target = Utils.joinPath(rootDir, importAst.directory);
-    const output = [
+    const target = await context.fs.findExistingPath(
+      Utils.joinPath(rootDir, importAst.directory).toString()
+    );
+    const output = target == null ? [
+      'Cannot open file.'
+    ] : [
       `[Imports file "${path.basename(
-        target.path
-      )}" inside this code](${target.toString()})`,
+        target
+      )}" inside this code](${target})`,
       '***',
       'Click the link above to open the file.',
       '',
@@ -80,11 +84,12 @@ export function activate(context: IContext) {
       result.toString(),
       resultAlt.toString()
     );
-
-    const output = [
+    const output: string[] = target == null ? [
+      'Cannot open file.'
+    ] : [
       `[Inserts file "${path.basename(
         target
-      )}" inside this code when building](${target.toString()})`,
+      )}" inside this code when building](${target})`,
       '***',
       'Click the link above to open the file.'
     ];
