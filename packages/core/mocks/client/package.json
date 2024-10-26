@@ -1,0 +1,43 @@
+{
+  "name": "lsp-sample",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-extension-samples"
+  },
+  "publisher": "vscode-samples",
+  "categories": [],
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "activationEvents": [
+    "onLanguage:greyscript"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Example configuration",
+      "properties": {}
+    },
+    "languages": [
+      {
+        "id": "greyscript",
+        "aliases": [
+          "GreyScript",
+          "greyscript"
+        ],
+        "extensions": [
+          ".src",
+          ".gs",
+          ".ms"
+        ],
+        "icon": {
+          "light": "./icons/file-icon-lightmode.png",
+          "dark": "./icons/file-icon-darkmode.png"
+        },
+        "configuration": "./greyscriptLanguageConfig.json"
+      }
+    ]
+  }
+}
