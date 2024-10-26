@@ -1,43 +1,17 @@
 {
-  "name": "greybel-languageserver-core",
-  "version": "1.2.0",
-  "description": "Core functionality of language server for GreyScript",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "private": true,
   "scripts": {
-    "prepublishOnly": "npm run build",
-    "build": "tsc -p ./",
-    "lint": "eslint ./src/**/*.ts",
-    "lint:fix": "eslint --fix ./src/**/*.ts",
-    "clean": "rm -rf dist",
-    "watch": "tsc -watch -p ./"
+    "test": "npm run build:test && node ./dist/run-tests.js",
+    "purge:dist": "rm -rf ./dist",
+    "copy:fixtures": "cp -r ./tests/fixtures ./dist/fixtures",
+    "copy:manifest": "cp ./mocks/client/package.json ./dist/package.json",
+    "build:test": "npm run purge:dist && node build-test.cjs && npm run copy:fixtures && npm run copy:manifest"
   },
   "engines": {
     "node": "*"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ayecue/greybel-languageserver-core.git"
-  },
   "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ayecue/greybel-languageserver-core/issues"
-  },
-  "homepage": "https://github.com/ayecue/greybel-languageserver-core#readme",
-  "keywords": [
-    "greybel",
-    "greyscript",
-    "greyhack",
-    "grey hack",
-    "grey",
-    "hack",
-    "miniscript",
-    "unity",
-    "lexer",
-    "parser",
-    "languageserver"
-  ],
+  "license": "UNLICENSED",
   "devDependencies": {
     "@babel/core": "^7.16.10",
     "@babel/plugin-transform-runtime": "^7.16.8",
@@ -61,25 +35,24 @@
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-security": "^1.5.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
+    "esbuild": "0.21.0",
+    "esbuild-plugin-globals": "0.2.0",
+    "esbuild-plugin-polyfill-node": "0.3.0",
     "glob": "^11.0.0",
     "jest": "^27.4.5",
     "mocha": "^10.7.3",
     "ts-node": "^10.9.2",
     "typescript": "^4.5.4",
-    "vscode-languageclient": "^9.0.1"
-  },
-  "peerDependencies": {
-    "greyscript-core": ">=2.0.0",
-    "greyscript-meta": ">=4.0.0",
-    "greyscript-transpiler": ">=1.2.0",
-    "miniscript-type-analyzer": ">=0.8.0"
-  },
-  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
     "color-convert": "^2.0.1",
     "lru-cache": "^7.18.3",
     "non-blocking-schedule": "^0.2.0",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.11",
-    "vscode-uri": "^3.0.8"
+    "vscode-uri": "^3.0.8",
+    "greyscript-core": ">=2.0.0",
+    "greyscript-meta": ">=4.0.0",
+    "greyscript-transpiler": ">=1.2.0",
+    "miniscript-type-analyzer": ">=0.8.0"
   }
 }

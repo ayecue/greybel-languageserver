@@ -10,7 +10,7 @@ import {
   activateSubscriptions,
   activateSymbol,
   IContext
-} from '../../src';
+} from '../../packages/core/src';
 
 const context = new NodeContext();
 

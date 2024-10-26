@@ -6,7 +6,7 @@ const build = async () => {
       esbuild.build({
         entryPoints: ['./mocks/client/extension.ts'],
         bundle: true,
-        outfile: 'test-dist/extension.js',
+        outfile: 'dist/extension.js',
         target: 'ESNext',
         platform: 'node',
         format: 'cjs',
@@ -14,13 +14,13 @@ const build = async () => {
           '.ts': 'ts'
         },
         external: [
-          'vscode'
+          'vscode',
         ]
       }),
       esbuild.build({
         entryPoints: ['./mocks/server/index.ts'],
         bundle: true,
-        outfile: 'test-dist/server.js',
+        outfile: 'dist/server.js',
         globalName: 'greybelLanguageserver',
         target: 'ESNext',
         platform: 'node',
@@ -35,7 +35,7 @@ const build = async () => {
       esbuild.build({
         entryPoints: ['./tests/**/*.ts'],
         bundle: false,
-        outdir: 'test-dist',
+        outdir: 'dist',
         platform: 'node',
         target: 'es6',
         format: 'cjs',

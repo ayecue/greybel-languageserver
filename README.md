@@ -1,5 +1,7 @@
 # greybel-languageserver
 
+[![greybel-languageserver](https://circleci.com/gh/ayecue/greybel-languageserver.svg?style=svg)](https://circleci.com/gh/ayecue/greybel-languageserver)
+
 Language server related tooling.
 
 ## Contains

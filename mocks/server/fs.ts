@@ -1,10 +1,11 @@
+
 import { createConnection, TextDocumentChangeEvent, TextDocuments } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import EventEmitter from "events";
 import { URI } from "vscode-uri";
 import fs from "fs";
 
-import { IContext, IFileSystem, LanguageId } from "../../src";
+import { IContext, IFileSystem, LanguageId } from '../../packages/core/src';
 import LRUCache from "lru-cache";
 
 export class FileSystem extends EventEmitter implements IFileSystem {
