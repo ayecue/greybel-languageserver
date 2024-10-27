@@ -76,7 +76,7 @@
     "greyscript-core": "~2.1.1",
     "greyscript-meta": "~4.1.0",
     "greyscript-transpiler": "~1.2.3",
-    "miniscript-type-analyzer": "~0.9.0",
+    "miniscript-type-analyzer": "~0.9.1",
     "greybel-languageserver-core": "~1.2.0"
   }
 }
