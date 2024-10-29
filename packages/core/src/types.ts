@@ -63,8 +63,7 @@ export interface IDocumentManager extends EventEmitter {
 export interface IDocumentMerger {
   build(
     document: TextDocument,
-    context: IContext,
-    refs?: Map<string, TypeDocument | null>
+    context: IContext
   ): Promise<TypeDocument>
 }
 
