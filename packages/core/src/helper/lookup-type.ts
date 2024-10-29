@@ -22,48 +22,6 @@ import { IContext } from '../types';
 import * as ASTScraper from './ast-scraper';
 import typeManager, { lookupBase } from './type-manager';
 
-export async function buildTypeDocument(
-  document: TextDocument,
-  context: IContext,
-  refs: Map<string, TypeDocument | null> = new Map()
-): Promise<TypeDocument> {
-  const documentUri = document.uri;
-
-  if (refs.has(documentUri)) {
-    return refs.get(documentUri);
-  }
-
-  const typeDoc = typeManager.get(documentUri);
-
-  refs.set(documentUri, null);
-
-  if (!typeDoc) {
-    return null;
-  }
-
-  const externalTypeDocs = [];
-  const allImports = await context.documentManager.get(document).getImports();
-
-  await Promise.all(
-    allImports.map(async (item) => {
-      const { document, textDocument } = item;
-
-      if (!document) {
-        return;
-      }
-
-      const itemTypeDoc = await buildTypeDocument(textDocument, context, refs);
-
-      if (itemTypeDoc === null) return;
-      externalTypeDocs.push(itemTypeDoc);
-    })
-  );
-
-  const mergedTypeDoc = typeDoc.merge(...externalTypeDocs);
-  refs.set(documentUri, mergedTypeDoc);
-  return mergedTypeDoc;
-}
-
 export type LookupOuter = ASTBase[];
 
 export interface LookupASTResult {
@@ -284,7 +242,7 @@ export class LookupHelper {
   }
 
   async buildTypeMap(): Promise<TypeDocument> {
-    return await buildTypeDocument(this.document, this.context);
+    return this.context.documentMerger.build(this.document, this.context);
   }
 
   async lookupTypeInfo({

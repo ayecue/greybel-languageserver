@@ -16,6 +16,7 @@ import {
   IndentationType,
   LanguageId
 } from './types';
+import { DocumentMerger } from './helper/document-merger';
 import { DocumentManager } from './helper/document-manager';
 
 function createConfig(preset?: IConfiguration): IConfiguration {
@@ -39,6 +40,7 @@ export abstract class CoreContext extends EventEmitter implements IContext {
   abstract readonly connection: ReturnType<typeof createConnection>;
   abstract readonly fs: IFileSystem;
   abstract readonly documentManager: DocumentManager;
+  abstract readonly documentMerger: DocumentMerger;
 
   protected _features: IContextFeatures;
   protected _configuration: IConfiguration;
