@@ -6,12 +6,13 @@ import {
 } from 'vscode-languageserver/browser';
 
 import { FileSystem } from './fs';
-import { CoreContext, DocumentManager } from 'greybel-languageserver-core';
+import { CoreContext, DocumentManager, DocumentMerger } from 'greybel-languageserver-core';
 
 export class BrowserContext extends CoreContext {
   readonly connection: ReturnType<typeof createConnection>;
   readonly fs: FileSystem;
   readonly documentManager: DocumentManager;
+  readonly documentMerger: DocumentMerger;
 
   private _messageReader: BrowserMessageReader;
   private _messageWriter: BrowserMessageWriter;
@@ -20,6 +21,7 @@ export class BrowserContext extends CoreContext {
     super();
 
     this.documentManager = new DocumentManager().setContext(this);
+    this.documentMerger = new DocumentMerger();
     this._messageReader = new BrowserMessageReader(self);
     this._messageWriter = new BrowserMessageWriter(self);
     this.connection = createConnection(
