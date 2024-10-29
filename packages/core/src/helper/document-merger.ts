@@ -51,6 +51,11 @@ export class DocumentMerger implements IDocumentMerger {
 
     const externalTypeDocs: TypeDocument[] = [];
     const allImports = await context.documentManager.get(document).getImports();
+    const cacheKey = this.createCacheKey(document, allImports);
+
+    if (this.results.has(cacheKey)) {
+      return this.results.get(cacheKey);
+    }
 
     await Promise.all(
       allImports.map(async (item) => {
@@ -69,6 +74,7 @@ export class DocumentMerger implements IDocumentMerger {
 
     const mergedTypeDoc = typeDoc.merge(...externalTypeDocs);
     refs.set(documentUri, mergedTypeDoc);
+    this.results.set(cacheKey, mergedTypeDoc);
     return mergedTypeDoc;
   }
 
@@ -91,7 +97,7 @@ export class DocumentMerger implements IDocumentMerger {
       return this.results.get(cacheKey);
     }
 
-    const refs: Map<string, TypeDocument | null> = new Map();
+    const refs: Map<string, TypeDocument | null> = new Map([[documentUri, null]]);
 
     await Promise.all(
       allImports.map(async (item) => {
