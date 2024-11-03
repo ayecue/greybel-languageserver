@@ -10,8 +10,10 @@ import { hash } from './hash';
 
 export class DocumentMerger implements IDocumentMerger {
   readonly results: LRU<number, TypeDocument>;
+  private keyToDocumentUriMap: Map<string, number>;
 
   constructor() {
+    this.keyToDocumentUriMap = new Map();
     this.results = new LRU({
       ttl: 1000 * 60 * 20,
       ttlAutopurge: true
@@ -28,6 +30,14 @@ export class DocumentMerger implements IDocumentMerger {
     }
 
     return result;
+  }
+
+  private registerCacheKey(key: number, documentUri: string) {
+    const oldKey = this.keyToDocumentUriMap.get(documentUri);
+    if (oldKey) {
+      this.results.delete(oldKey);
+    }
+    this.keyToDocumentUriMap.set(documentUri, key);
   }
 
   private async process(
@@ -57,8 +67,18 @@ export class DocumentMerger implements IDocumentMerger {
       return this.results.get(cacheKey);
     }
 
+    this.registerCacheKey(cacheKey, documentUri);
+
+    const importUris = await context.documentManager.get(document).getDependencies();
+
     await Promise.all(
-      allImports.map(async (item) => {
+      importUris.map(async (itemUri) => {
+        const item = context.documentManager.results.get(itemUri);
+
+        if (!item) {
+          return;
+        }
+
         const { document, textDocument } = item;
 
         if (!document) {
@@ -97,10 +117,19 @@ export class DocumentMerger implements IDocumentMerger {
       return this.results.get(cacheKey);
     }
 
+    this.registerCacheKey(cacheKey, documentUri);
+
+    const importUris = await context.documentManager.get(document).getDependencies();
     const refs: Map<string, TypeDocument | null> = new Map([[documentUri, null]]);
 
     await Promise.all(
-      allImports.map(async (item) => {
+      importUris.map(async (itemUri) => {
+        const item = context.documentManager.results.get(itemUri);
+
+        if (!item) {
+          return;
+        }
+
         const { document, textDocument } = item;
 
         if (!document) {

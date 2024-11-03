@@ -141,7 +141,7 @@ export class ActiveDocument implements IActiveDocument {
     return this.dependencies;
   }
 
-  async getImports(): Promise<ActiveDocument[]> {
+  async getImports(nested: boolean = true): Promise<ActiveDocument[]> {
     if (this.document == null) {
       return [];
     }
@@ -162,7 +162,7 @@ export class ActiveDocument implements IActiveDocument {
 
         imports.add(item);
 
-        if (item.document !== null) {
+        if (item.document !== null && nested) {
           await traverse(item);
         }
       }

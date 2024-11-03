@@ -43,7 +43,7 @@ export interface IActiveDocument {
 
   getDirectory(): URI;
   getDependencies(): Promise<string[]>;
-  getImports(): Promise<IActiveDocument[]>
+  getImports(nested?: boolean): Promise<IActiveDocument[]>
 }
 
 export interface IDocumentManager extends EventEmitter {
