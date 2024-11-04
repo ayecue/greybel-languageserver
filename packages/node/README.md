@@ -32,14 +32,6 @@ greybel-languageserver
 
 ## Example implementations
 
-Currently, there are two server client versions. The reason for this is that VSCode supports development in your web browser but also on your local machine.
-
-In case it is required to have the language server running within the context of a browser you have to use the `dist/browser.js` file.
-
-If you want to use the language server for local development go ahead and use `dist/node.js`.
-
-You can find some examples below.
-
 #### VSCode implementation
 ```ts
 import * as path from 'path';
@@ -51,7 +43,7 @@ import {
 } from 'vscode-languageclient/node';
 
 const serverModule = context.asAbsolutePath(
-  path.join('node_modules', 'greybel-languageserver', 'dist', 'node.js')
+  path.join('node_modules', 'greybel-languageserver', 'index.js')
 );
 
 const serverOptions: ServerOptions = {
@@ -116,14 +108,33 @@ You can add your own meta descriptions in [this repository](https://github.com/a
 Additionally, there is the option to define methods via comments in the code.
 
 ```js
+// @type Bar
+// @property {string} virtualMoo
+Bar = {}
+Bar.moo = ""
+
 // Hello world
 // I am **bold**
 // @description Alternative description
 // @example test("title", 123)
 // @param {string} title - The title of the book.
 // @param {string|number} author - The author of the book.
-// @return {crypto} - Some info about return
-test = function(test, abc)
-  print(test)
+// @return {Bar} - Some info about return
+Bar.test = function(test, abc)
+  print "test"
+  return self
 end function
+
+// @type Foo
+Foo = new Bar
+// @return {Foo}
+Foo.New = function(message)
+  result = new Foo
+  return result
+end function
+
+myVar = Foo.New
+
+myVar.test // shows defined signature of Bar.test on hover
+myVar.virtualMoo // shows virtual property of type string on hover
 ```
