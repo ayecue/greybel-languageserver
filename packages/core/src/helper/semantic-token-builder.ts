@@ -32,9 +32,10 @@ import {
   Keyword,
   Operator
 } from 'miniscript-core';
+import { ASTType as GreybelASTType } from 'greybel-core';
 import type { SemanticTokensBuilder, SemanticTokensLegend } from 'vscode-languageserver';
 import { IActiveDocument } from '../types';
-import { Lexer, ASTImportCodeExpression } from 'greyscript-core';
+import { Lexer, ASTImportCodeExpression, ASTType as GreyScriptASTType } from 'greyscript-core';
 
 export type SemanticToken = {
   line: number;
@@ -95,16 +96,6 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
       const evalExpr = current as ASTIsaExpression;
       generator(tokens, evalExpr.left);
       generator(tokens, evalExpr.right);
-      return;
-    }
-    case ASTType.ImportCodeExpression: {
-      const importExpr = current as ASTImportCodeExpression;
-      tokens.push({
-        line: importExpr.start.line,
-        char: importExpr.start.character,
-        length: importExpr.end.character - importExpr.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
       return;
     }
     case ASTType.ComparisonGroupExpression: {
@@ -339,6 +330,82 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
       }
       return;
     }
+    case GreybelASTType.FeatureDebuggerExpression: {
+      tokens.push({
+        line: current.start.line,
+        char: current.start.character,
+        length: current.end.character - current.start.character,
+        tokenType: SemanticTokenType.Keyword
+      });
+      return;
+    }
+    case GreybelASTType.FeatureEnvarExpression: {
+      tokens.push({
+        line: current.start.line,
+        char: current.start.character,
+        length: current.end.character - current.start.character,
+        tokenType: SemanticTokenType.Keyword
+      });
+      return;
+    }
+    case GreybelASTType.FeatureFileExpression: {
+      tokens.push({
+        line: current.start.line,
+        char: current.start.character,
+        length: current.end.character - current.start.character,
+        tokenType: SemanticTokenType.Keyword
+      });
+      return;
+    }
+    case GreybelASTType.FeatureLineExpression: {
+      tokens.push({
+        line: current.start.line,
+        char: current.start.character,
+        length: current.end.character - current.start.character,
+        tokenType: SemanticTokenType.Keyword
+      });
+      return;
+    }
+    case GreybelASTType.FeatureInjectExpression: {
+      tokens.push({
+        line: current.start.line,
+        char: current.start.character,
+        length: current.end.character - current.start.character,
+        tokenType: SemanticTokenType.Keyword
+      });
+      return;
+    }
+    case GreybelASTType.FeatureImportExpression: {
+      tokens.push({
+        line: current.start.line,
+        char: current.start.character,
+        length: current.start.character + 7, // #import
+        tokenType: SemanticTokenType.Keyword
+      });
+      return;
+    }
+    case GreybelASTType.FeatureIncludeExpression: {
+      tokens.push({
+        line: current.start.line,
+        char: current.start.character,
+        length: current.start.character + 8, // #include
+        tokenType: SemanticTokenType.Keyword
+      });
+      return;
+    }
+    case GreyScriptASTType.ImportCodeExpression: {
+      const importExpr = current as ASTImportCodeExpression;
+      tokens.push({
+        line: importExpr.start.line,
+        char: importExpr.start.character,
+        length: importExpr.end.character - importExpr.start.character,
+        tokenType: SemanticTokenType.Keyword
+      });
+      return;
+    }
+    case ASTType.Unknown:
+    case ASTType.MapValue:
+    case ASTType.MapCallExpression:
     case ASTType.InvalidCodeExpression:
     case ASTType.EmptyExpression:
     case ASTType.Comment:
