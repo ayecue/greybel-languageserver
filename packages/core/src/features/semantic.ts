@@ -1,10 +1,9 @@
-import {
-  SemanticTokensBuilder,
-  type SemanticTokensParams,
+import type {
+  SemanticTokensParams,
 } from 'vscode-languageserver';
 
 import { IContext } from '../types';
-import { buildAdvancedTokens, buildKeywordAndOperatorTokens } from '../helper/semantic-token-builder';
+import { buildTokens } from '../helper/semantic-token-builder';
 
 export function activate(context: IContext) {
   context.connection.languages.semanticTokens.on(async (params: SemanticTokensParams) => {
@@ -22,8 +21,7 @@ export function activate(context: IContext) {
 
     const builder = context.createSemanticTokensBuilder();
 
-    buildKeywordAndOperatorTokens(builder, parseResult);
-    buildAdvancedTokens(builder, parseResult);
+    buildTokens(builder, parseResult);
 
     return builder.build();
   });

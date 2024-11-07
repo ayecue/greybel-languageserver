@@ -109,10 +109,7 @@ export abstract class CoreContext extends EventEmitter implements IContext {
             tokenTypes: semanticTokensLegend.tokenTypes,
             tokenModifiers: semanticTokensLegend.tokenModifiers,
           },
-          range: false,
-          full: {
-            delta: false,
-          },
+          full: true
         },
         textDocumentSync: 2 // incremental
       }

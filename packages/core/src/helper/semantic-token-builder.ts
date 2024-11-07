@@ -1,41 +1,20 @@
 import {
-  ASTAssignmentStatement,
-  ASTBase,
-  ASTBinaryExpression,
-  ASTCallExpression,
-  ASTComparisonGroupExpression,
-  ASTFunctionStatement,
-  ASTIdentifier,
-  ASTIndexExpression,
-  ASTIsaExpression,
-  ASTListConstructorExpression,
-  ASTWhileStatement,
-  ASTForGenericStatement,
-  ASTMapKeyString,
-  ASTListValue,
-  ASTLogicalExpression,
-  ASTMapConstructorExpression,
-  ASTMemberExpression,
-  ASTParenthesisExpression,
-  ASTSliceExpression,
-  ASTType,
-  ASTUnaryExpression,
-  ASTCallStatement,
-  ASTLiteral,
-  ASTIfClause,
-  ASTIfStatement,
-  ASTChunk,
-  ASTElseClause,
-  ASTReturnStatement,
   Token,
   TokenType,
+  LiteralToken,
   Keyword,
-  Operator
+  Selector,
+  SelectorGroup,
+  SelectorGroups,
+  Selectors,
+  ASTType,
+  PendingClauseType,
+  ParserValidatorm
 } from 'miniscript-core';
-import { ASTType as GreybelASTType } from 'greybel-core';
 import type { SemanticTokensBuilder, SemanticTokensLegend } from 'vscode-languageserver';
 import { IActiveDocument } from '../types';
-import { Lexer, ASTImportCodeExpression, ASTType as GreyScriptASTType } from 'greyscript-core';
+import { GreybelKeyword, Selectors as GreybelSelectors, SelectorGroups as GreybelSelectorGroups } from 'greybel-core';
+import { Lexer, GreyScriptKeyword } from 'greyscript-core';
 import { isNative } from 'greyscript-meta';
 
 export type SemanticToken = {
@@ -57,13 +36,20 @@ export enum SemanticTokenType {
   Operator,
   Comment,
   Constant,
-  VariableNative,
-  PropertyNative,
   Punctuator
 }
 
 export enum SemanticTokenModifier {
-  Declaration
+  Declaration,
+  Definition,
+  Readonly,
+  Static,
+  Deprecated,
+  Abstract,
+  Async,
+  Modification,
+  Documentation,
+  DefaultLibrary
 }
 
 export const semanticTokensLegend: SemanticTokensLegend = {
@@ -78,388 +64,1063 @@ export const semanticTokensLegend: SemanticTokensLegend = {
     'operator',
     'comment',
     'constant',
-    'variable.native',
-    'property.native',
     'punctuator'
   ],
   tokenModifiers: [
-    'declaration'
+    'declaration',
+    'definition',
+    'readonly',
+    'static',
+    'deprecated',
+    'abstract',
+    'async',
+    'modification',
+    'documentation',
+    'defaultLibrary'
   ]
 };
 
-type GeneratorContext = {
-  isDeclaration?: boolean;
-  isStatement?: boolean;
+const getSingularModifier = (modifier: SemanticTokenModifier): number => {
+  return 1 << modifier;
 }
 
-function generator(tokens: SemanticToken[], current: ASTBase, context?: GeneratorContext): void {
-  switch (current.type) {
-    case ASTType.BinaryExpression: {
-      const evalExpr = current as ASTBinaryExpression;
-      generator(tokens, evalExpr.left);
-      generator(tokens, evalExpr.right);
-      return;
+class TokenHandler {
+  // runtime
+  token: Token | null;
+  previousToken: Token | null;
+
+  private _lexer: Lexer;
+  private _builder: SemanticTokensBuilder;
+  private _validator: ParserValidatorm;
+
+  constructor(lexer: Lexer, builder: SemanticTokensBuilder) {
+    this._lexer = lexer;
+    this._builder = builder;
+    this._validator = new ParserValidatorm();
+  }
+
+  private next() {
+    this.previousToken = this.token;
+    this.token = this._lexer.next();
+  }
+
+  private isType(type: TokenType): boolean {
+    return this.token !== null && type === this.token.type;
+  }
+
+  private consume(selector: Selector): boolean {
+    if (selector(this.token)) {
+      this.next();
+      return true;
     }
-    case ASTType.LogicalExpression: {
-      const evalExpr = current as ASTLogicalExpression;
-      generator(tokens, evalExpr.left);
-      generator(tokens, evalExpr.right);
-      return;
+
+    return false;
+  }
+
+  private consumeMany(selectorGroup: SelectorGroup): boolean {
+    if (selectorGroup(this.token)) {
+      this.next();
+      return true;
     }
-    case ASTType.IsaExpression: {
-      const evalExpr = current as ASTIsaExpression;
-      generator(tokens, evalExpr.left);
-      generator(tokens, evalExpr.right);
-      return;
+
+    return false;
+  }
+
+  private requireType(type: TokenType): Token | null {
+    const token = this.token;
+
+    if (this.token.type !== type) {
+      return null;
     }
-    case ASTType.ComparisonGroupExpression: {
-      const comparisonGroupExpr = current as ASTComparisonGroupExpression;
-      for (let index = 0; index < comparisonGroupExpr.expressions.length; index++) {
-        generator(tokens, comparisonGroupExpr.expressions[index]);
+
+    this.next();
+    return token;
+  }
+
+  private requireToken(selector: Selector): Token | null {
+    const token = this.token;
+
+    if (!selector(token)) {
+      return null;
+    }
+
+    this.next();
+    return token;
+  }
+
+  private requireTokenOfAny(selectorGroup: SelectorGroup): Token | null {
+    const token = this.token;
+
+    if (selectorGroup(token)) {
+      this.next();
+      return token;
+    }
+
+    return null;
+  }
+
+  private skipNewlines() {
+    const me = this;
+    while (true) {
+      if (Selectors.Comment(me.token)) {
+        this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length + 2, SemanticTokenType.Comment, undefined);
+      } else if (!Selectors.EndOfLine(me.token)) {
+        break;
       }
+
+      me.next();
+    }
+  }
+
+  private processIdentifier(isMember: boolean = false, isParameter: boolean = false) {
+    const me = this;
+    const token = me.requireType(TokenType.Identifier);
+
+    if (!token) {
       return;
     }
-    case ASTType.IfStatement:
-    case ASTType.IfShortcutStatement: {
-      const ifStatement = current as ASTIfStatement;
-      for (let index = 0; index < ifStatement.clauses.length; index++) {
-        generator(tokens, ifStatement.clauses[index]);
+
+    if (isParameter) {
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Parameter, undefined);
+    } else if (isMember) {
+      const isNativeIdentifier = isNative(['any'], token.value);
+      const modifier = isNativeIdentifier ? getSingularModifier(SemanticTokenModifier.DefaultLibrary) : undefined;
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Property, modifier);
+    } else {
+      const isNativeIdentifier = isNative(['general'], token.value);
+      const modifier = isNativeIdentifier ? getSingularModifier(SemanticTokenModifier.DefaultLibrary) : undefined;
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Variable, modifier);
+    }
+  }
+
+  private processLiteral() {
+    const token = this.token as LiteralToken;
+
+    switch (token.type) {
+      case TokenType.StringLiteral: {
+        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, undefined);
+        break;
       }
-      return;
-    }
-    case ASTType.IfClause:
-    case ASTType.ElseifClause:
-    case ASTType.IfShortcutClause:
-    case ASTType.ElseifShortcutClause: {
-      const clause = current as ASTIfClause;
-      generator(tokens, clause.condition);
-      for (let index = 0; index < clause.body.length; index++) {
-        generator(tokens, clause.body[index], { isStatement: true });
+      case TokenType.NumericLiteral: {
+        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.Number, undefined);
+        break;
       }
-      return;
-    }
-    case ASTType.ElseClause:
-    case ASTType.ElseShortcutClause: {
-      const clause = current as ASTElseClause;
-      for (let index = 0; index < clause.body.length; index++) {
-        generator(tokens, clause.body[index], { isStatement: true });
+      case TokenType.BooleanLiteral:
+      case TokenType.NilLiteral: {
+        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.Constant, undefined);
+        break;
       }
+    }
+
+    this.next();
+  }
+
+  private processAtom(
+    _asLval: boolean = false,
+    _statementStart: boolean = false
+  ) {
+    const me = this;
+
+    // greybel
+    if (GreybelSelectors.Envar(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
+      return me.processFeatureEnvarExpression();
+    } else if (GreybelSelectors.Inject(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
+      return me.processFeatureInjectExpression();
+    } else if (GreybelSelectors.Line(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
+      return;
+    } else if (GreybelSelectors.File(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
       return;
     }
-    case ASTType.ForGenericStatement: {
-      const forStatement = current as ASTForGenericStatement;
-      generator(tokens, forStatement.variable);
-      generator(tokens, forStatement.iterator);
-      for (let index = 0; index < forStatement.body.length; index++) {
-        generator(tokens, forStatement.body[index], { isStatement: true });
-      }
-      return;
+
+    // miniscript
+    if (me._validator.isLiteral(<TokenType>me.token.type)) {
+      return me.processLiteral();
+    } else if (me.isType(TokenType.Identifier)) {
+      return me.processIdentifier();
     }
-    case ASTType.AssignmentStatement: {
-      const assignStatement = current as ASTAssignmentStatement;
-      generator(tokens, assignStatement.variable);
-      generator(tokens, assignStatement.init, { isDeclaration: true });
-      return;
+  }
+
+  private processQuantity(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    if (!Selectors.LParenthesis(me.token)) {
+      return me.processAtom(asLval, statementStart);
     }
-    case ASTType.ReturnStatement: {
-      const returnStatement = current as ASTReturnStatement;
-      if (returnStatement.argument) generator(tokens, returnStatement.argument);
-      return;
+
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+    me.next();
+    me.skipNewlines();
+    me.processExpr();
+
+    const endToken = me.requireToken(Selectors.RParenthesis);
+    if (!endToken) return;
+    me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, undefined);
+  }
+
+  private processList(asLval: boolean = false, statementStart: boolean = false) {
+    const me = this;
+
+    if (!Selectors.SLBracket(me.token)) {
+      return me.processQuantity(asLval, statementStart);
     }
-    case ASTType.WhileStatement: {
-      const whileStatement = current as ASTWhileStatement;
-      generator(tokens, whileStatement.condition);
-      for (let index = 0; index < whileStatement.body.length; index++) {
-        generator(tokens, whileStatement.body[index], { isStatement: true });
-      }
-      return;
-    }
-    case ASTType.FunctionDeclaration: {
-      const fnStatement = current as ASTFunctionStatement;
-      tokens.push({
-        line: fnStatement.start.line,
-        char: fnStatement.start.character + Keyword.Function.length,
-        length: 0,
-        tokenType: SemanticTokenType.Function
-      });
-      for (let index = 0; index < fnStatement.parameters.length; index++) {
-        const parameter = fnStatement.parameters[index];
-        if (parameter.type === ASTType.Identifier) {
-          const idtfr = parameter as ASTIdentifier;
-          tokens.push({
-            line: idtfr.start.line,
-            char: idtfr.start.character,
-            length: idtfr.name.length,
-            tokenType: SemanticTokenType.Parameter
-          });
-          continue;
+
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+    me.next();
+
+    if (Selectors.SRBracket(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me.next();
+    } else {
+      me.skipNewlines();
+
+      while (!Selectors.EndOfFile(me.token)) {
+        if (Selectors.SRBracket(me.token)) {
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me.next();
+          break;
         }
-        const assignment = parameter as ASTAssignmentStatement;
-        const idtfr = assignment.variable as ASTIdentifier;
-        tokens.push({
-          line: idtfr.start.line,
-          char: idtfr.start.character,
-          length: idtfr.name.length,
-          tokenType: SemanticTokenType.Parameter
-        });
-        generator(tokens, assignment.init);
+
+        me.processExpr();
+
+        if (Selectors.MapSeperator(me.token)) {
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me.next();
+          me.skipNewlines();
+        }
+
+        if (
+          Selectors.SRBracket(me.token)
+        ) {
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me.next();
+          break;
+        }
       }
-      for (let index = 0; index < fnStatement.body.length; index++) {
-        generator(tokens, fnStatement.body[index], { isStatement: true });
+    }
+  }
+
+  private processMap(asLval: boolean = false, statementStart: boolean = false) {
+    const me = this;
+
+    if (!Selectors.CLBracket(me.token)) {
+      return me.processList(asLval, statementStart);
+    }
+
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+    me.next();
+
+    if (Selectors.CRBracket(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me.next();
+    } else {
+      me.skipNewlines();
+
+      while (!Selectors.EndOfFile(me.token)) {
+        if (Selectors.CRBracket(me.token)) {
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me.next();
+          break;
+        }
+
+        me.processExpr();
+
+        const sepToken = me.requireToken(Selectors.MapKeyValueSeperator);
+        if (!sepToken) return;
+        me._builder.push(sepToken.start.line - 1, sepToken.start.character - 1, sepToken.value.length, SemanticTokenType.Punctuator, undefined);
+
+        me.skipNewlines();
+        me.processExpr();
+
+        if (Selectors.MapSeperator(me.token)) {
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me.next();
+          me.skipNewlines();
+        }
+
+        if (
+          Selectors.CRBracket(me.token)
+        ) {
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me.next();
+          break;
+        }
       }
-      return;
     }
-    case ASTType.ParenthesisExpression: {
-      const parenExpr = current as ASTParenthesisExpression;
-      generator(tokens, parenExpr.expression);
-      return;
-    }
-    case ASTType.MemberExpression: {
-      const memberExpr = current as ASTMemberExpression;
-      const idtfr = memberExpr.identifier as ASTIdentifier;
-      tokens.push({
-        line: idtfr.start.line,
-        char: idtfr.start.character,
-        length: idtfr.name.length,
-        tokenType: isNative(['any'], idtfr.name) ? SemanticTokenType.PropertyNative : SemanticTokenType.Property,
-        tokenModifiers: context?.isDeclaration ? SemanticTokenModifier.Declaration : undefined
-      });
-      generator(tokens, memberExpr.base);
-      return;
-    }
-    case ASTType.IndexExpression: {
-      const indexExpr = current as ASTIndexExpression;
-      generator(tokens, indexExpr.index);
-      generator(tokens, indexExpr.base);
-      return;
-    }
-    case ASTType.CallStatement: {
-      const callExpr = current as ASTCallStatement;
-      generator(tokens, callExpr.expression);
-      return;
-    }
-    case ASTType.CallExpression: {
-      const callExpr = current as ASTCallExpression;
-      generator(tokens, callExpr.base);
-      for (let index = 0; index < callExpr.arguments.length; index++) {
-        const arg = callExpr.arguments[index];
-        generator(tokens, arg);
+  }
+
+  private processCallArgs() {
+    const me = this;
+
+    if (Selectors.LParenthesis(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me.next();
+
+      if (Selectors.RParenthesis(me.token)) {
+        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+        me.next();
+      } else {
+        while (!Selectors.EndOfFile(me.token)) {
+          me.skipNewlines();
+          me.processExpr();
+          me.skipNewlines();
+
+          const nextToken = me.requireTokenOfAny(
+            SelectorGroups.CallArgsEnd
+          );
+
+          if (!nextToken) {
+            return;
+          }
+
+          if (
+            Selectors.RParenthesis(nextToken)
+          ) {
+            me._builder.push(nextToken.start.line - 1, nextToken.start.character - 1, nextToken.value.length, SemanticTokenType.Punctuator, undefined);
+            break;
+          } else if (
+            !Selectors.ArgumentSeperator(nextToken)
+          ) {
+            break;
+          }
+        }
       }
-      return;
     }
-    case ASTType.NegationExpression:
-    case ASTType.BinaryNegatedExpression:
-    case ASTType.UnaryExpression: {
-      const unaryExpr = current as ASTUnaryExpression;
-      generator(tokens, unaryExpr.argument);
-      return;
-    }
-    case ASTType.Identifier: {
-      const idtfr = current as ASTIdentifier;
-      tokens.push({
-        line: idtfr.start.line,
-        char: idtfr.start.character,
-        length: idtfr.name.length,
-        tokenType: isNative(['general'], idtfr.name) ? SemanticTokenType.VariableNative : SemanticTokenType.Variable,
-        tokenModifiers: context?.isDeclaration ? SemanticTokenModifier.Declaration : undefined
-      });
-      return;
-    }
-    case ASTType.NumericLiteral: {
-      const literal = current as ASTLiteral;
-      tokens.push({
-        line: literal.start.line,
-        char: literal.start.character,
-        length: literal.value.toString().length,
-        tokenType: SemanticTokenType.Number
-      });
-      return;
-    }
-    case ASTType.StringLiteral: {
-      const literal = current as ASTLiteral;
-      tokens.push({
-        line: literal.start.line,
-        char: literal.start.character,
-        length: literal.value.toString().length,
-        tokenType: SemanticTokenType.String
-      });
-      return;
-    }
-    case ASTType.NilLiteral: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.end.character - current.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
-    }
-    case ASTType.BooleanLiteral: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.end.character - current.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
-    }
-    case ASTType.MapConstructorExpression: {
-      const mapExpr = current as ASTMapConstructorExpression;
-      for (let index = 0; index < mapExpr.fields.length; index++) {
-        const field = mapExpr.fields[index];
-        generator(tokens, field);
+  }
+
+  private processCallExpr(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    me.processMap(asLval, statementStart);
+
+    while (!Selectors.EndOfFile(me.token)) {
+      if (Selectors.MemberSeperator(me.token)) {
+        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+        me.next();
+        me.skipNewlines();
+        me.processIdentifier(true);
+      } else if (Selectors.SLBracket(me.token) && !me.token.afterSpace) {
+        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+        me.next();
+        me.skipNewlines();
+
+        if (Selectors.SliceSeperator(me.token)) {
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me.next();
+          me.skipNewlines();
+
+          if (Selectors.SRBracket(me.token)) {
+            me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          } else {
+            me.processExpr();
+          }
+        } else {
+          me.processExpr();
+
+          if (Selectors.SliceSeperator(me.token)) {
+            me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+            me.next();
+            me.skipNewlines();
+
+            if (Selectors.SRBracket(me.token)) {
+              me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+            } else {
+              me.processExpr();
+            }
+          }
+        }
+
+        const endToken = me.requireToken(Selectors.SRBracket);
+        if (!endToken) {
+          return;
+        }
+        me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, undefined);
+      } else if (
+        Selectors.LParenthesis(me.token) &&
+        (!asLval || !me.token.afterSpace)
+      ) {
+        me.processCallArgs();
+      } else {
+        break;
       }
-      return;
     }
-    case ASTType.MapKeyString: {
-      const mapKeyStr = current as ASTMapKeyString;
-      generator(tokens, mapKeyStr.key);
-      generator(tokens, mapKeyStr.value);
-      return;
+  }
+
+  private processPower(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    me.processCallExpr(asLval, statementStart);
+
+    if (Selectors.Power(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processCallExpr();
     }
-    case ASTType.ListValue: {
-      const listValue = current as ASTListValue;
-      generator(tokens, listValue.value);
-      return;
+  }
+
+  private processAddressOf(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    if (!Selectors.Reference(me.token)) {
+      return me.processPower(asLval, statementStart);
     }
-    case ASTType.ListConstructorExpression: {
-      const listExpr = current as ASTListConstructorExpression;
-      for (let index = 0; index < listExpr.fields.length; index++) {
-        const field = listExpr.fields[index];
-        generator(tokens, field);
-      }
-      return;
+
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+    me.next();
+    me.skipNewlines();
+    me.processPower();
+  }
+
+  private processNew(asLval: boolean = false, statementStart: boolean = false) {
+    const me = this;
+
+    if (!Selectors.New(me.token)) {
+      return me.processAddressOf(asLval, statementStart);
     }
-    case ASTType.SliceExpression: {
-      const sliceExpr = current as ASTSliceExpression;
-      generator(tokens, sliceExpr.base);
-      generator(tokens, sliceExpr.left);
-      generator(tokens, sliceExpr.right);
-      return;
+
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+    me.next();
+    me.skipNewlines();
+    me.processNew();
+  }
+
+  private processUnaryMinus(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    if (!Selectors.Minus(me.token)) {
+      return me.processNew(asLval, statementStart);
     }
-    case ASTType.Chunk: {
-      const chunk = current as ASTChunk;
-      for (let index = 0; index < chunk.body.length; index++) {
-        generator(tokens, chunk.body[index], { isStatement: true });
-      }
-      return;
+
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+    me.next();
+    me.skipNewlines();
+    me.processNew();
+  }
+
+  private processMultDiv(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+    me.processUnaryMinus(asLval, statementStart);
+
+    while (SelectorGroups.MultiDivOperators(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processUnaryMinus();
     }
-    case GreybelASTType.FeatureDebuggerExpression: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.end.character - current.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
+  }
+
+  private processBitwise(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    me.processMultDiv(asLval, statementStart);
+
+    while (GreybelSelectorGroups.BitwiseOperators(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processMultDiv();
     }
-    case GreybelASTType.FeatureEnvarExpression: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.end.character - current.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
+  }
+
+  private processAddSub(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+    me.processBitwise(asLval, statementStart);
+
+    while (Selectors.Plus(me.token) || (Selectors.Minus(me.token) && (!statementStart || !me.token.afterSpace || me._lexer.isAtWhitespace()))) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processBitwise();
     }
-    case GreybelASTType.FeatureFileExpression: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.end.character - current.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
+  }
+
+  private processComparisons(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    me.processAddSub(asLval, statementStart);
+
+    if (!SelectorGroups.ComparisonOperators(
+      me.token
+    )) return;
+
+    do {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processAddSub();
+    } while (SelectorGroups.ComparisonOperators(
+      me.token
+    ));
+  }
+
+  private processBitwiseAnd(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    me.processComparisons(asLval, statementStart);
+
+    while (GreybelSelectors.BitwiseAnd(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me.next();
+      me.processComparisons();
     }
-    case GreybelASTType.FeatureLineExpression: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.end.character - current.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
+  }
+
+  private processBitwiseOr(
+    asLval: boolean = false,
+    statementStart: boolean = false
+  ) {
+    const me = this;
+
+    me.processBitwiseAnd(asLval, statementStart);
+
+    while (GreybelSelectors.BitwiseOr(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me.next();
+      me.processBitwiseAnd();
     }
-    case GreybelASTType.FeatureInjectExpression: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.end.character - current.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
-    }
-    case GreybelASTType.FeatureImportExpression: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.start.character + 7, // #import
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
-    }
-    case GreybelASTType.FeatureIncludeExpression: {
-      tokens.push({
-        line: current.start.line,
-        char: current.start.character,
-        length: current.start.character + 8, // #include
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
-    }
-    case GreyScriptASTType.ImportCodeExpression: {
-      const importExpr = current as ASTImportCodeExpression;
-      tokens.push({
-        line: importExpr.start.line,
-        char: importExpr.start.character,
-        length: importExpr.end.character - importExpr.start.character,
-        tokenType: SemanticTokenType.Keyword
-      });
-      return;
-    }
-    case ASTType.Unknown:
-    case ASTType.MapValue:
-    case ASTType.MapCallExpression:
-    case ASTType.InvalidCodeExpression:
-    case ASTType.EmptyExpression:
-    case ASTType.Comment:
-    case ASTType.BreakStatement:
-    case ASTType.ContinueStatement: {
+  }
+
+  private processIsa(asLval: boolean = false, statementStart: boolean = false) {
+    const me = this;
+    me.processBitwiseOr(asLval, statementStart);
+
+    if (Selectors.Isa(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processBitwiseOr();
       return;
     }
   }
 
-  console.warn(`Unexpected ast type ${current.type} in semantic token generator!`);
+  private processNot(asLval: boolean = false, statementStart: boolean = false) {
+    const me = this;
 
-  return;
-}
+    if (Selectors.Not(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processIsa();
+      return;
+    }
 
-export function buildAdvancedTokens(builder: SemanticTokensBuilder, document: IActiveDocument): SemanticTokensBuilder {
-  const tokens: SemanticToken[] = [];
-  generator(tokens, document.document);
-  for (let index = 0; index < tokens.length; index++) {
-    const token = tokens[index];
-    builder.push(token.line - 1, token.char - 1, token.length, token.tokenType, token.tokenModifiers);
+    me.processIsa(asLval, statementStart);
   }
-  return builder;
+
+  private processAnd(asLval: boolean = false, statementStart: boolean = false) {
+    const me = this;
+
+    me.processNot(asLval, statementStart);
+
+    while (Selectors.And(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processNot();
+    }
+  }
+
+  private processOr(asLval: boolean = false, statementStart: boolean = false) {
+    const me = this;
+
+    me.processAnd(asLval, statementStart);
+
+    while (Selectors.Or(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
+      me.skipNewlines();
+      me.processAnd();
+    }
+  }
+
+  private processFunctionDeclaration(asLval: boolean = false, statementStart: boolean = false) {
+    const me = this;
+
+    if (!Selectors.Function(me.token)) return me.processOr(asLval, statementStart);
+
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+    me.next();
+
+    if (!SelectorGroups.BlockEndOfLine(me.token)) {
+      const lParenToken = me.requireToken(Selectors.LParenthesis);
+      if (!lParenToken) return;
+      me._builder.push(lParenToken.start.line - 1, lParenToken.start.character - 1, lParenToken.value.length, SemanticTokenType.Punctuator, undefined);
+
+      while (!SelectorGroups.FunctionDeclarationArgEnd(me.token)) {
+        me.processIdentifier(false, true);
+
+        if (me.consume(Selectors.Assign)) {
+          me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Operator, undefined);
+          me.processExpr();
+        }
+
+        if (Selectors.RParenthesis(me.token)) break;
+        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+        const sepToken = me.requireToken(Selectors.ArgumentSeperator);
+        if (!sepToken) return;
+        me._builder.push(sepToken.start.line - 1, sepToken.start.character - 1, sepToken.value.length, SemanticTokenType.Punctuator, undefined);
+        if (Selectors.RParenthesis(me.token)) {
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          break;
+        }
+      }
+
+      const endToken = me.requireToken(Selectors.RParenthesis);
+      if (!endToken) return;
+      me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, undefined);
+    }
+  }
+
+  private processExpr(asLval: boolean = false, statementStart: boolean = false) {
+    this.processFunctionDeclaration(asLval, statementStart);
+  }
+
+  private processForShortcutStatement(): void {
+    const me = this;
+    me.processShortcutStatement();
+  }
+
+  private processForStatement(): void {
+    const me = this;
+
+    me.processIdentifier();
+
+    const inToken = me.requireToken(Selectors.In);
+    if (!inToken) return;
+    me._builder.push(inToken.start.line - 1, inToken.start.character - 1, inToken.value.length, SemanticTokenType.Keyword, undefined);
+
+    me.processExpr();
+
+    if (!SelectorGroups.BlockEndOfLine(me.token)) {
+      me.processForShortcutStatement();
+      return;
+    }
+  }
+
+  private processWhileShortcutStatement(): void {
+    const me = this;
+    me.processShortcutStatement();
+  }
+
+  private processWhileStatement(): void {
+    const me = this;
+
+    me.processExpr();
+
+    if (!SelectorGroups.BlockEndOfLine(me.token)) {
+      return me.processWhileShortcutStatement();
+    }
+  }
+
+  private processIfShortcutStatement(): void {
+    const me = this;
+
+    me.processShortcutStatement();
+
+    if (Selectors.Else(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me.next();
+
+      me.processShortcutStatement();
+    }
+  }
+
+  private processNextIfClause(type: PendingClauseType | null) {
+    const me = this;
+
+    switch (type) {
+      case ASTType.ElseifClause: {
+        me.processExpr();
+        const thenToken = me.requireToken(Selectors.Then);
+        if (!thenToken) return;
+        me._builder.push(thenToken.start.line - 1, thenToken.start.character - 1, thenToken.value.length, SemanticTokenType.Keyword, undefined);
+        break;
+      }
+      case ASTType.ElseClause: {
+        break;
+      }
+    }
+  }
+
+  private processIfStatement(): void {
+    const me = this;
+
+    me.processExpr();
+
+    const thenToken = me.requireToken(Selectors.Then);
+    if (!thenToken) return;
+    me._builder.push(thenToken.start.line - 1, thenToken.start.character - 1, thenToken.value.length, SemanticTokenType.Keyword, undefined);
+
+    if (!SelectorGroups.BlockEndOfLine(me.token)) {
+      me.processIfShortcutStatement();
+      return;
+    }
+  }
+
+  private processReturnStatement() {
+    const me = this;
+
+    if (
+      !SelectorGroups.ReturnStatementEnd(me.token)
+    ) {
+      me.processExpr();
+    }
+  }
+
+  private processAssignment() {
+    const me = this;
+    const startToken = me.token;
+
+    me.processExpr(true, true);
+
+    if (
+      SelectorGroups.AssignmentEndOfExpr(me.token)
+    ) {
+      return;
+    }
+
+    if (Selectors.Assign(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me.next();
+
+      me.processExpr();
+      return;
+    } else if (
+      SelectorGroups.AssignmentShorthand(
+        me.token
+      )
+    ) {
+      const op = me.token;
+
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me.next();
+
+      me.processExpr();
+
+      return;
+    }
+
+    const expressions = [];
+
+    while (!Selectors.EndOfFile(me.token)) {
+      me.processExpr();
+
+      if (SelectorGroups.BlockEndOfLine(me.token)) break;
+      if (Selectors.Else(me.token)) break;
+      if (Selectors.ArgumentSeperator(me.token)) {
+        me.next();
+        me.skipNewlines();
+        continue;
+      }
+
+      const requiredToken = me.requireTokenOfAny(
+        SelectorGroups.AssignmentCommandArgs
+      );
+
+      if (!requiredToken) {
+        return;
+      }
+
+      if (
+        Selectors.EndOfLine(requiredToken) ||
+        Selectors.EndOfFile(requiredToken)
+      )
+        break;
+    }
+
+    if (expressions.length === 0) {
+      // Call Statement
+      return;
+    }
+
+    // Call Statement with args
+    return;
+  }
+
+  private processShortcutStatement() {
+    const me = this;
+
+    if (TokenType.Keyword === me.token.type && Keyword.Not !== me.token.value) {
+      const value = me.token.value;
+
+      this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+
+      switch (value) {
+        case Keyword.Return: {
+          me.next();
+          me.processReturnStatement();
+        }
+        case Keyword.Continue: {
+          me.next();
+          return;
+        }
+        case Keyword.Break: {
+          me.next();
+          return;
+        }
+        default: { }
+      }
+    }
+
+    return me.processAssignment();
+  }
+
+  private processPathSegment() {
+    const me = this;
+
+    if (this.token.type === ASTType.StringLiteral) {
+      const token = this.token as LiteralToken;
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, undefined);
+      this.next();
+      return;
+    }
+
+    let path: string = '';
+
+    while (!GreybelSelectorGroups.PathSegmentEnd(me.token)) {
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.String, undefined);
+      path = path + me.token.value;
+      me.next();
+    }
+
+    if (me.consumeMany(GreybelSelectorGroups.PathSegmentEnd)) {
+      me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, undefined);
+    }
+
+    return path;
+  }
+
+  private processFeatureEnvarExpression() {
+    const me = this;
+
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.String, undefined);
+    me.next();
+  }
+
+  private processFeatureInjectExpression() {
+    const me = this;
+    me.processPathSegment();
+  }
+
+  private processFeatureImportStatement() {
+    const me = this;
+
+    me.processIdentifier();
+
+    if (!me.consume(GreybelSelectors.From)) {
+      return;
+    }
+
+    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Keyword, undefined);
+    me.processPathSegment();
+  }
+
+  private processFeatureIncludeStatement() {
+    const me = this;
+    me.processPathSegment();
+  }
+
+  private processNativeImportCodeStatement() {
+    const me = this;
+
+    if (!me.consume(Selectors.LParenthesis)) {
+      return;
+    }
+
+    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, undefined);
+
+    if (TokenType.StringLiteral === me.token.type) {
+      const token = me.token as LiteralToken;
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, undefined);
+      me.next();
+    } else {
+      return;
+    }
+
+    if (me.consume(Selectors.ImportCodeSeperator)) {
+      me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, undefined);
+
+      if (!me.isType(TokenType.StringLiteral)) {
+        return;
+      }
+
+      const token = me.token as LiteralToken;
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, undefined);
+
+      me.next();
+    }
+
+    if (!me.consume(Selectors.RParenthesis)) {
+      return;
+    }
+
+    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, undefined);
+  }
+
+  private processKeyword() {
+    const me = this;
+    const value = me.token.value;
+
+    this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+
+    switch (value) {
+      case Keyword.Return: {
+        me.next();
+        me.processReturnStatement();
+        return;
+      }
+      case Keyword.If: {
+        me.next();
+        me.processIfStatement();
+        return;
+      }
+      case Keyword.ElseIf: {
+        me.next();
+        me.processNextIfClause(ASTType.ElseifClause);
+        return;
+      }
+      case Keyword.Else: {
+        me.next();
+        me.processNextIfClause(ASTType.ElseClause);
+        return;
+      }
+      case Keyword.While: {
+        me.next();
+        me.processWhileStatement();
+        return;
+      }
+      case Keyword.For: {
+        me.next();
+        me.processForStatement();
+        return;
+      }
+      case Keyword.EndFunction: {
+        me.next();
+        return;
+      }
+      case Keyword.EndFor: {
+        me.next();
+        return;
+      }
+      case Keyword.EndWhile: {
+        me.next();
+        return;
+      }
+      case Keyword.EndIf: {
+        me.next();
+        return;
+      }
+      case Keyword.Continue: {
+        me.next();
+        return;
+      }
+      case Keyword.Break: {
+        me.next();
+        return;
+      }
+      case GreybelKeyword.Include:
+      case GreybelKeyword.IncludeWithComment: {
+        me.next();
+        me.processFeatureIncludeStatement();
+        return;
+      }
+      case GreybelKeyword.Import:
+      case GreybelKeyword.ImportWithComment: {
+        me.next();
+        me.processFeatureImportStatement()
+        return;
+      }
+      case GreybelKeyword.Envar: {
+        me.next();
+        me.processFeatureEnvarExpression();
+        return;
+      }
+      case GreybelKeyword.Inject: {
+        me.next();
+        me.processFeatureInjectExpression();
+        return;
+      }
+      case GreybelKeyword.Debugger: {
+        me.next();
+        return;
+      }
+      case GreyScriptKeyword.ImportCode: {
+        me.next();
+        me.processNativeImportCodeStatement();
+        return;
+      }
+    }
+  }
+
+  private processStatement(): void {
+    const me = this;
+
+    if (TokenType.Keyword === me.token.type && Keyword.Not !== me.token.value) {
+      me.processKeyword();
+      return;
+    }
+
+    me.processAssignment();
+  }
+
+  process() {
+    const me = this;
+
+    me.next();
+
+    while (!Selectors.EndOfFile(me.token)) {
+      me.skipNewlines();
+
+      if (Selectors.EndOfFile(me.token)) break;
+
+      me.processStatement();
+    }
+  }
 }
 
-
-export function buildKeywordAndOperatorTokens(builder: SemanticTokensBuilder, document: IActiveDocument): SemanticTokensBuilder {
+export function buildTokens(builder: SemanticTokensBuilder, document: IActiveDocument): SemanticTokensBuilder {
   const lexer = new Lexer(document.content, {
     unsafe: true
   });
-  const operators = new Set(Object.values(Operator));
-  let token: Token = lexer.next();
-  while (token.type !== TokenType.EOF) {
-    if (token.type === TokenType.Keyword) {
-      builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Keyword, undefined);
-    } else if (token.type === TokenType.Punctuator) {
-      builder.push(token.start.line - 1, token.start.character - 1, token.value.length, operators.has(token.value as Operator) ? SemanticTokenType.Operator : SemanticTokenType.Punctuator, undefined);
-    } else if (token.type === TokenType.Comment) {
-      builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Comment, undefined);
-    }
-    token = lexer.next();
-  }
+  const handler = new TokenHandler(lexer, builder);
+  handler.process();
   return builder;
 }
