@@ -47,7 +47,7 @@ export interface IActiveDocument {
 }
 
 export interface IDocumentManager extends EventEmitter {
-  readonly results: LRU<string, IActiveDocument>
+  readonly results: LRU<string, IActiveDocument>;
   readonly context: IContext;
 
   setContext(context: IContext)

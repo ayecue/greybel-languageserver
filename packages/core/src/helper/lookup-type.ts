@@ -14,13 +14,15 @@ import {
   Document as TypeDocument,
   IEntity,
   injectIdentifers,
-  isValidIdentifierLiteral
+  isValidIdentifierLiteral,
+  IAggregator
 } from 'miniscript-type-analyzer';
 import { Position, TextDocument } from 'vscode-languageserver-textdocument';
 
-import { IContext } from '../types';
+import { IActiveDocument, IContext } from '../types';
 import * as ASTScraper from './ast-scraper';
 import typeManager, { lookupBase } from './type-manager';
+import { ASTDefinitionItem } from 'miniscript-type-analyzer/dist/types/object';
 
 export type LookupOuter = ASTBase[];
 
@@ -33,16 +35,43 @@ export class LookupHelper {
   readonly document: TextDocument;
   readonly context: IContext;
 
+  private refMapForScopes: Map<ASTBaseBlockWithScope, string>;
+  private mergedTypeMap: TypeDocument;
+
   constructor(document: TextDocument, context: IContext) {
     this.document = document;
     this.context = context;
+
+    this.mergedTypeMap = null;
+    this.refMapForScopes = null;
   }
 
-  findAllAssignmentsOfIdentifier(
+  getRefMapForScopes(): Map<ASTBaseBlockWithScope, string> {
+    if (this.refMapForScopes == null) {
+      this.refMapForScopes = new Map<ASTBaseBlockWithScope, string>();
+
+      this.context.documentManager.results.forEach((activeDocument: IActiveDocument) => {
+        if (activeDocument.document) {
+          this.refMapForScopes.set(activeDocument.document, activeDocument.textDocument.uri);
+        }
+      });
+    }
+
+    return this.refMapForScopes;
+  }
+
+  async getTypeMap(): Promise<TypeDocument> {
+    if (this.mergedTypeMap == null) {
+      this.mergedTypeMap = await this.context.documentMerger.build(this.document, this.context);
+    }
+    return this.mergedTypeMap;
+  }
+
+  async findAllAssignmentsOfIdentifier(
     identifier: string,
     root: ASTBaseBlockWithScope
-  ): ASTAssignmentStatement[] {
-    const typeDoc = typeManager.get(this.document.uri);
+  ): Promise<ASTDefinitionItem[]> {
+    const typeDoc = await this.getTypeMap();
 
     if (typeDoc == null) {
       return [];
@@ -58,11 +87,11 @@ export class LookupHelper {
       .aggregator.resolveAvailableAssignmentsWithQuery(identifier);
   }
 
-  findAllAssignmentsOfItem(
+  async findAllAssignmentsOfItem(
     item: ASTBase,
     root: ASTBaseBlockWithScope
-  ): ASTAssignmentStatement[] {
-    const typeDoc = typeManager.get(this.document.uri);
+  ): Promise<ASTDefinitionItem[]> {
+    const typeDoc = await this.getTypeMap();
 
     if (typeDoc == null) {
       return [];
@@ -226,7 +255,7 @@ export class LookupHelper {
   }
 
   async lookupBasePath(item: ASTBase): Promise<IEntity | null> {
-    const typeDoc = await this.buildTypeMap();
+    const typeDoc = await this.getTypeMap();
 
     if (typeDoc === null) {
       return null;
@@ -241,15 +270,11 @@ export class LookupHelper {
     return null;
   }
 
-  async buildTypeMap(): Promise<TypeDocument> {
-    return this.context.documentMerger.build(this.document, this.context);
-  }
-
   async lookupTypeInfo({
     closest,
     outer
   }: LookupASTResult): Promise<IEntity | null> {
-    const typeDoc = await this.buildTypeMap();
+    const typeDoc = await this.getTypeMap();
 
     if (typeDoc === null) {
       return null;

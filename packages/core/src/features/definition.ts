@@ -11,14 +11,16 @@ import type {
 
 import { LookupHelper } from '../helper/lookup-type';
 import { IContext } from '../types';
+import { getRootScope } from '../helper/get-root-scope';
 
-const findAllDefinitions = (
+const findAllDefinitions = async (
   helper: LookupHelper,
   item: ASTBase,
   root: ASTBaseBlockWithScope
-): DefinitionLink[] => {
-  const assignments = helper.findAllAssignmentsOfItem(item, root);
+): Promise<DefinitionLink[]> => {
+  const assignments = await helper.findAllAssignmentsOfItem(item, root);
   const definitions: DefinitionLink[] = [];
+  const refMap = helper.getRefMapForScopes();
 
   for (const assignment of assignments) {
     if (!assignment.start || !assignment.end) {
@@ -34,7 +36,7 @@ const findAllDefinitions = (
       character: assignment.end.character - 1
     };
     const definitionLink: DefinitionLink = {
-      targetUri: helper.document.uri,
+      targetUri: refMap.get(getRootScope(assignment)),
       targetRange: { start, end },
       targetSelectionRange: { start, end }
     };
@@ -74,22 +76,6 @@ export function activate(context: IContext) {
       }
     }
 
-    const definitions = findAllDefinitions(helper, target, target.scope!);
-    const allImports = await context.documentManager.get(document).getImports();
-
-    for (const item of allImports) {
-      const { document, textDocument } = item;
-
-      if (!document) {
-        continue;
-      }
-
-      const helper = new LookupHelper(textDocument, context);
-      const subDefinitions = findAllDefinitions(helper, target, document);
-
-      definitions.push(...subDefinitions);
-    }
-
-    return definitions;
+    return await findAllDefinitions(helper, target, target.scope!);
   });
 }
