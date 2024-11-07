@@ -36,6 +36,7 @@ import { ASTType as GreybelASTType } from 'greybel-core';
 import type { SemanticTokensBuilder, SemanticTokensLegend } from 'vscode-languageserver';
 import { IActiveDocument } from '../types';
 import { Lexer, ASTImportCodeExpression, ASTType as GreyScriptASTType } from 'greyscript-core';
+import { isNative } from 'greyscript-meta';
 
 export type SemanticToken = {
   line: number;
@@ -54,7 +55,11 @@ export enum SemanticTokenType {
   Function,
   Parameter,
   Operator,
-  Comment
+  Comment,
+  Constant,
+  VariableNative,
+  PropertyNative,
+  Punctuator
 }
 
 export enum SemanticTokenModifier {
@@ -71,14 +76,23 @@ export const semanticTokensLegend: SemanticTokensLegend = {
     'function',
     'parameter',
     'operator',
-    'comment'
+    'comment',
+    'constant',
+    'variable.native',
+    'property.native',
+    'punctuator'
   ],
   tokenModifiers: [
     'declaration'
   ]
 };
 
-function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boolean = false): void {
+type GeneratorContext = {
+  isDeclaration?: boolean;
+  isStatement?: boolean;
+}
+
+function generator(tokens: SemanticToken[], current: ASTBase, context?: GeneratorContext): void {
   switch (current.type) {
     case ASTType.BinaryExpression: {
       const evalExpr = current as ASTBinaryExpression;
@@ -120,7 +134,7 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
       const clause = current as ASTIfClause;
       generator(tokens, clause.condition);
       for (let index = 0; index < clause.body.length; index++) {
-        generator(tokens, clause.body[index]);
+        generator(tokens, clause.body[index], { isStatement: true });
       }
       return;
     }
@@ -128,7 +142,7 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
     case ASTType.ElseShortcutClause: {
       const clause = current as ASTElseClause;
       for (let index = 0; index < clause.body.length; index++) {
-        generator(tokens, clause.body[index]);
+        generator(tokens, clause.body[index], { isStatement: true });
       }
       return;
     }
@@ -137,14 +151,14 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
       generator(tokens, forStatement.variable);
       generator(tokens, forStatement.iterator);
       for (let index = 0; index < forStatement.body.length; index++) {
-        generator(tokens, forStatement.body[index]);
+        generator(tokens, forStatement.body[index], { isStatement: true });
       }
       return;
     }
     case ASTType.AssignmentStatement: {
       const assignStatement = current as ASTAssignmentStatement;
       generator(tokens, assignStatement.variable);
-      generator(tokens, assignStatement.init, true);
+      generator(tokens, assignStatement.init, { isDeclaration: true });
       return;
     }
     case ASTType.ReturnStatement: {
@@ -156,7 +170,7 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
       const whileStatement = current as ASTWhileStatement;
       generator(tokens, whileStatement.condition);
       for (let index = 0; index < whileStatement.body.length; index++) {
-        generator(tokens, whileStatement.body[index]);
+        generator(tokens, whileStatement.body[index], { isStatement: true });
       }
       return;
     }
@@ -191,7 +205,7 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
         generator(tokens, assignment.init);
       }
       for (let index = 0; index < fnStatement.body.length; index++) {
-        generator(tokens, fnStatement.body[index]);
+        generator(tokens, fnStatement.body[index], { isStatement: true });
       }
       return;
     }
@@ -207,8 +221,8 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
         line: idtfr.start.line,
         char: idtfr.start.character,
         length: idtfr.name.length,
-        tokenType: SemanticTokenType.Property,
-        tokenModifiers: isDeclaration ? SemanticTokenModifier.Declaration : undefined
+        tokenType: isNative(['any'], idtfr.name) ? SemanticTokenType.PropertyNative : SemanticTokenType.Property,
+        tokenModifiers: context?.isDeclaration ? SemanticTokenModifier.Declaration : undefined
       });
       generator(tokens, memberExpr.base);
       return;
@@ -246,8 +260,8 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
         line: idtfr.start.line,
         char: idtfr.start.character,
         length: idtfr.name.length,
-        tokenType: SemanticTokenType.Variable,
-        tokenModifiers: isDeclaration ? SemanticTokenModifier.Declaration : undefined
+        tokenType: isNative(['general'], idtfr.name) ? SemanticTokenType.VariableNative : SemanticTokenType.Variable,
+        tokenModifiers: context?.isDeclaration ? SemanticTokenModifier.Declaration : undefined
       });
       return;
     }
@@ -326,7 +340,7 @@ function generator(tokens: SemanticToken[], current: ASTBase, isDeclaration: boo
     case ASTType.Chunk: {
       const chunk = current as ASTChunk;
       for (let index = 0; index < chunk.body.length; index++) {
-        generator(tokens, chunk.body[index]);
+        generator(tokens, chunk.body[index], { isStatement: true });
       }
       return;
     }
@@ -440,8 +454,8 @@ export function buildKeywordAndOperatorTokens(builder: SemanticTokensBuilder, do
   while (token.type !== TokenType.EOF) {
     if (token.type === TokenType.Keyword) {
       builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Keyword, undefined);
-    } else if (token.type === TokenType.Punctuator && operators.has(token.value as Operator)) {
-      builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Operator, undefined);
+    } else if (token.type === TokenType.Punctuator) {
+      builder.push(token.start.line - 1, token.start.character - 1, token.value.length, operators.has(token.value as Operator) ? SemanticTokenType.Operator : SemanticTokenType.Punctuator, undefined);
     } else if (token.type === TokenType.Comment) {
       builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Comment, undefined);
     }
