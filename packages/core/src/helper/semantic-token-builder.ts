@@ -163,7 +163,7 @@ class TokenHandler {
     const me = this;
     while (true) {
       if (Selectors.Comment(me.token)) {
-        this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length + 2, SemanticTokenType.Comment, undefined);
+        this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length + 2, SemanticTokenType.Comment, 0);
       } else if (!Selectors.EndOfLine(me.token)) {
         break;
       }
@@ -181,14 +181,14 @@ class TokenHandler {
     }
 
     if (isParameter) {
-      me._builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Parameter, undefined);
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Parameter, 0);
     } else if (isMember) {
       const isNativeIdentifier = isNative(['any'], token.value);
-      const modifier = isNativeIdentifier ? getSingularModifier(SemanticTokenModifier.DefaultLibrary) : undefined;
+      const modifier = isNativeIdentifier ? getSingularModifier(SemanticTokenModifier.DefaultLibrary) : 0;
       me._builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Property, modifier);
     } else {
       const isNativeIdentifier = isNative(['general'], token.value);
-      const modifier = isNativeIdentifier ? getSingularModifier(SemanticTokenModifier.DefaultLibrary) : undefined;
+      const modifier = isNativeIdentifier ? getSingularModifier(SemanticTokenModifier.DefaultLibrary) : 0;
       me._builder.push(token.start.line - 1, token.start.character - 1, token.value.length, SemanticTokenType.Variable, modifier);
     }
   }
@@ -198,16 +198,16 @@ class TokenHandler {
 
     switch (token.type) {
       case TokenType.StringLiteral: {
-        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, undefined);
+        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, 0);
         break;
       }
       case TokenType.NumericLiteral: {
-        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.Number, undefined);
+        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.Number, 0);
         break;
       }
       case TokenType.BooleanLiteral:
       case TokenType.NilLiteral: {
-        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.Constant, undefined);
+        this._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.Constant, 0);
         break;
       }
     }
@@ -223,19 +223,19 @@ class TokenHandler {
 
     // greybel
     if (GreybelSelectors.Envar(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
       return me.processFeatureEnvarExpression();
     } else if (GreybelSelectors.Inject(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
       return me.processFeatureInjectExpression();
     } else if (GreybelSelectors.Line(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
       return;
     } else if (GreybelSelectors.File(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
       return;
     }
@@ -258,14 +258,14 @@ class TokenHandler {
       return me.processAtom(asLval, statementStart);
     }
 
-    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
     me.next();
     me.skipNewlines();
     me.processExpr();
 
     const endToken = me.requireToken(Selectors.RParenthesis);
     if (!endToken) return;
-    me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, undefined);
+    me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, 0);
   }
 
   private processList(asLval: boolean = false, statementStart: boolean = false) {
@@ -275,18 +275,18 @@ class TokenHandler {
       return me.processQuantity(asLval, statementStart);
     }
 
-    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
     me.next();
 
     if (Selectors.SRBracket(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
       me.next();
     } else {
       me.skipNewlines();
 
       while (!Selectors.EndOfFile(me.token)) {
         if (Selectors.SRBracket(me.token)) {
-          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           me.next();
           break;
         }
@@ -294,7 +294,7 @@ class TokenHandler {
         me.processExpr();
 
         if (Selectors.MapSeperator(me.token)) {
-          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           me.next();
           me.skipNewlines();
         }
@@ -302,7 +302,7 @@ class TokenHandler {
         if (
           Selectors.SRBracket(me.token)
         ) {
-          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           me.next();
           break;
         }
@@ -317,18 +317,18 @@ class TokenHandler {
       return me.processList(asLval, statementStart);
     }
 
-    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
     me.next();
 
     if (Selectors.CRBracket(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
       me.next();
     } else {
       me.skipNewlines();
 
       while (!Selectors.EndOfFile(me.token)) {
         if (Selectors.CRBracket(me.token)) {
-          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           me.next();
           break;
         }
@@ -337,13 +337,13 @@ class TokenHandler {
 
         const sepToken = me.requireToken(Selectors.MapKeyValueSeperator);
         if (!sepToken) return;
-        me._builder.push(sepToken.start.line - 1, sepToken.start.character - 1, sepToken.value.length, SemanticTokenType.Punctuator, undefined);
+        me._builder.push(sepToken.start.line - 1, sepToken.start.character - 1, sepToken.value.length, SemanticTokenType.Punctuator, 0);
 
         me.skipNewlines();
         me.processExpr();
 
         if (Selectors.MapSeperator(me.token)) {
-          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           me.next();
           me.skipNewlines();
         }
@@ -351,7 +351,7 @@ class TokenHandler {
         if (
           Selectors.CRBracket(me.token)
         ) {
-          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           me.next();
           break;
         }
@@ -363,11 +363,11 @@ class TokenHandler {
     const me = this;
 
     if (Selectors.LParenthesis(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
       me.next();
 
       if (Selectors.RParenthesis(me.token)) {
-        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
         me.next();
       } else {
         while (!Selectors.EndOfFile(me.token)) {
@@ -386,7 +386,7 @@ class TokenHandler {
           if (
             Selectors.RParenthesis(nextToken)
           ) {
-            me._builder.push(nextToken.start.line - 1, nextToken.start.character - 1, nextToken.value.length, SemanticTokenType.Punctuator, undefined);
+            me._builder.push(nextToken.start.line - 1, nextToken.start.character - 1, nextToken.value.length, SemanticTokenType.Punctuator, 0);
             break;
           } else if (
             !Selectors.ArgumentSeperator(nextToken)
@@ -408,22 +408,22 @@ class TokenHandler {
 
     while (!Selectors.EndOfFile(me.token)) {
       if (Selectors.MemberSeperator(me.token)) {
-        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
         me.next();
         me.skipNewlines();
         me.processIdentifier(true);
       } else if (Selectors.SLBracket(me.token) && !me.token.afterSpace) {
-        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
         me.next();
         me.skipNewlines();
 
         if (Selectors.SliceSeperator(me.token)) {
-          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           me.next();
           me.skipNewlines();
 
           if (Selectors.SRBracket(me.token)) {
-            me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+            me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           } else {
             me.processExpr();
           }
@@ -431,12 +431,12 @@ class TokenHandler {
           me.processExpr();
 
           if (Selectors.SliceSeperator(me.token)) {
-            me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+            me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
             me.next();
             me.skipNewlines();
 
             if (Selectors.SRBracket(me.token)) {
-              me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+              me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
             } else {
               me.processExpr();
             }
@@ -447,7 +447,7 @@ class TokenHandler {
         if (!endToken) {
           return;
         }
-        me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, undefined);
+        me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, 0);
       } else if (
         Selectors.LParenthesis(me.token) &&
         (!asLval || !me.token.afterSpace)
@@ -468,7 +468,7 @@ class TokenHandler {
     me.processCallExpr(asLval, statementStart);
 
     if (Selectors.Power(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, 0);
       me.next();
       me.skipNewlines();
       me.processCallExpr();
@@ -485,7 +485,7 @@ class TokenHandler {
       return me.processPower(asLval, statementStart);
     }
 
-    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
     me.next();
     me.skipNewlines();
     me.processPower();
@@ -498,7 +498,7 @@ class TokenHandler {
       return me.processAddressOf(asLval, statementStart);
     }
 
-    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
     me.next();
     me.skipNewlines();
     me.processNew();
@@ -514,7 +514,7 @@ class TokenHandler {
       return me.processNew(asLval, statementStart);
     }
 
-    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, 0);
     me.next();
     me.skipNewlines();
     me.processNew();
@@ -528,7 +528,7 @@ class TokenHandler {
     me.processUnaryMinus(asLval, statementStart);
 
     while (SelectorGroups.MultiDivOperators(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, 0);
       me.next();
       me.skipNewlines();
       me.processUnaryMinus();
@@ -544,7 +544,7 @@ class TokenHandler {
     me.processMultDiv(asLval, statementStart);
 
     while (GreybelSelectorGroups.BitwiseOperators(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, 0);
       me.next();
       me.skipNewlines();
       me.processMultDiv();
@@ -559,7 +559,7 @@ class TokenHandler {
     me.processBitwise(asLval, statementStart);
 
     while (Selectors.Plus(me.token) || (Selectors.Minus(me.token) && (!statementStart || !me.token.afterSpace || me._lexer.isAtWhitespace()))) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, 0);
       me.next();
       me.skipNewlines();
       me.processBitwise();
@@ -579,7 +579,7 @@ class TokenHandler {
     )) return;
 
     do {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, 0);
       me.next();
       me.skipNewlines();
       me.processAddSub();
@@ -597,7 +597,7 @@ class TokenHandler {
     me.processComparisons(asLval, statementStart);
 
     while (GreybelSelectors.BitwiseAnd(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
       me.next();
       me.processComparisons();
     }
@@ -612,7 +612,7 @@ class TokenHandler {
     me.processBitwiseAnd(asLval, statementStart);
 
     while (GreybelSelectors.BitwiseOr(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
       me.next();
       me.processBitwiseAnd();
     }
@@ -623,7 +623,7 @@ class TokenHandler {
     me.processBitwiseOr(asLval, statementStart);
 
     if (Selectors.Isa(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
       me.skipNewlines();
       me.processBitwiseOr();
@@ -635,7 +635,7 @@ class TokenHandler {
     const me = this;
 
     if (Selectors.Not(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
       me.skipNewlines();
       me.processIsa();
@@ -651,7 +651,7 @@ class TokenHandler {
     me.processNot(asLval, statementStart);
 
     while (Selectors.And(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
       me.skipNewlines();
       me.processNot();
@@ -664,7 +664,7 @@ class TokenHandler {
     me.processAnd(asLval, statementStart);
 
     while (Selectors.Or(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
       me.skipNewlines();
       me.processAnd();
@@ -676,36 +676,36 @@ class TokenHandler {
 
     if (!Selectors.Function(me.token)) return me.processOr(asLval, statementStart);
 
-    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
     me.next();
 
     if (!SelectorGroups.BlockEndOfLine(me.token)) {
       const lParenToken = me.requireToken(Selectors.LParenthesis);
       if (!lParenToken) return;
-      me._builder.push(lParenToken.start.line - 1, lParenToken.start.character - 1, lParenToken.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(lParenToken.start.line - 1, lParenToken.start.character - 1, lParenToken.value.length, SemanticTokenType.Punctuator, 0);
 
       while (!SelectorGroups.FunctionDeclarationArgEnd(me.token)) {
         me.processIdentifier(false, true);
 
         if (me.consume(Selectors.Assign)) {
-          me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Operator, undefined);
+          me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Operator, 0);
           me.processExpr();
         }
 
         if (Selectors.RParenthesis(me.token)) break;
-        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+        me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
         const sepToken = me.requireToken(Selectors.ArgumentSeperator);
         if (!sepToken) return;
-        me._builder.push(sepToken.start.line - 1, sepToken.start.character - 1, sepToken.value.length, SemanticTokenType.Punctuator, undefined);
+        me._builder.push(sepToken.start.line - 1, sepToken.start.character - 1, sepToken.value.length, SemanticTokenType.Punctuator, 0);
         if (Selectors.RParenthesis(me.token)) {
-          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, undefined);
+          me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Punctuator, 0);
           break;
         }
       }
 
       const endToken = me.requireToken(Selectors.RParenthesis);
       if (!endToken) return;
-      me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(endToken.start.line - 1, endToken.start.character - 1, endToken.value.length, SemanticTokenType.Punctuator, 0);
     }
   }
 
@@ -725,7 +725,7 @@ class TokenHandler {
 
     const inToken = me.requireToken(Selectors.In);
     if (!inToken) return;
-    me._builder.push(inToken.start.line - 1, inToken.start.character - 1, inToken.value.length, SemanticTokenType.Keyword, undefined);
+    me._builder.push(inToken.start.line - 1, inToken.start.character - 1, inToken.value.length, SemanticTokenType.Keyword, 0);
 
     me.processExpr();
 
@@ -756,7 +756,7 @@ class TokenHandler {
     me.processShortcutStatement();
 
     if (Selectors.Else(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
       me.next();
 
       me.processShortcutStatement();
@@ -771,7 +771,7 @@ class TokenHandler {
         me.processExpr();
         const thenToken = me.requireToken(Selectors.Then);
         if (!thenToken) return;
-        me._builder.push(thenToken.start.line - 1, thenToken.start.character - 1, thenToken.value.length, SemanticTokenType.Keyword, undefined);
+        me._builder.push(thenToken.start.line - 1, thenToken.start.character - 1, thenToken.value.length, SemanticTokenType.Keyword, 0);
         break;
       }
       case ASTType.ElseClause: {
@@ -787,7 +787,7 @@ class TokenHandler {
 
     const thenToken = me.requireToken(Selectors.Then);
     if (!thenToken) return;
-    me._builder.push(thenToken.start.line - 1, thenToken.start.character - 1, thenToken.value.length, SemanticTokenType.Keyword, undefined);
+    me._builder.push(thenToken.start.line - 1, thenToken.start.character - 1, thenToken.value.length, SemanticTokenType.Keyword, 0);
 
     if (!SelectorGroups.BlockEndOfLine(me.token)) {
       me.processIfShortcutStatement();
@@ -818,7 +818,7 @@ class TokenHandler {
     }
 
     if (Selectors.Assign(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, 0);
       me.next();
 
       me.processExpr();
@@ -830,7 +830,7 @@ class TokenHandler {
     ) {
       const op = me.token;
 
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Operator, 0);
       me.next();
 
       me.processExpr();
@@ -881,7 +881,7 @@ class TokenHandler {
     if (TokenType.Keyword === me.token.type && Keyword.Not !== me.token.value) {
       const value = me.token.value;
 
-      this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+      this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
 
       switch (value) {
         case Keyword.Return: {
@@ -908,7 +908,7 @@ class TokenHandler {
 
     if (this.token.type === ASTType.StringLiteral) {
       const token = this.token as LiteralToken;
-      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, undefined);
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, 0);
       this.next();
       return;
     }
@@ -916,13 +916,13 @@ class TokenHandler {
     let path: string = '';
 
     while (!GreybelSelectorGroups.PathSegmentEnd(me.token)) {
-      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.String, undefined);
+      me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.String, 0);
       path = path + me.token.value;
       me.next();
     }
 
     if (me.consumeMany(GreybelSelectorGroups.PathSegmentEnd)) {
-      me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, 0);
     }
 
     return path;
@@ -931,7 +931,7 @@ class TokenHandler {
   private processFeatureEnvarExpression() {
     const me = this;
 
-    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.String, undefined);
+    me._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.String, 0);
     me.next();
   }
 
@@ -949,7 +949,7 @@ class TokenHandler {
       return;
     }
 
-    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Keyword, undefined);
+    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Keyword, 0);
     me.processPathSegment();
   }
 
@@ -965,25 +965,25 @@ class TokenHandler {
       return;
     }
 
-    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, undefined);
+    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, 0);
 
     if (TokenType.StringLiteral === me.token.type) {
       const token = me.token as LiteralToken;
-      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, undefined);
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, 0);
       me.next();
     } else {
       return;
     }
 
     if (me.consume(Selectors.ImportCodeSeperator)) {
-      me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, undefined);
+      me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, 0);
 
       if (!me.isType(TokenType.StringLiteral)) {
         return;
       }
 
       const token = me.token as LiteralToken;
-      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, undefined);
+      me._builder.push(token.start.line - 1, token.start.character - 1, token.raw.length, SemanticTokenType.String, 0);
 
       me.next();
     }
@@ -992,14 +992,14 @@ class TokenHandler {
       return;
     }
 
-    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, undefined);
+    me._builder.push(me.previousToken.start.line - 1, me.previousToken.start.character - 1, me.previousToken.value.length, SemanticTokenType.Punctuator, 0);
   }
 
   private processKeyword() {
     const me = this;
     const value = me.token.value;
 
-    this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, undefined);
+    this._builder.push(me.token.start.line - 1, me.token.start.character - 1, me.token.value.length, SemanticTokenType.Keyword, 0);
 
     switch (value) {
       case Keyword.Return: {
