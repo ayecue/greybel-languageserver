@@ -2,7 +2,8 @@ import {
   BrowserMessageReader,
   BrowserMessageWriter,
   createConnection,
-  ProposedFeatures
+  ProposedFeatures,
+  SemanticTokensBuilder
 } from 'vscode-languageserver/browser';
 
 import { FileSystem } from './fs';
@@ -30,5 +31,9 @@ export class BrowserContext extends CoreContext {
       this._messageWriter
     );
     this.fs = new FileSystem(this);
+  }
+
+  createSemanticTokensBuilder(): SemanticTokensBuilder {
+    return new SemanticTokensBuilder();
   }
 }
