@@ -4,7 +4,8 @@ import type {
   createConnection,
   InitializedParams,
   InitializeParams,
-  InitializeResult
+  InitializeResult,
+  SemanticTokensBuilder
 } from 'vscode-languageserver';
 
 import {
@@ -18,6 +19,7 @@ import {
 } from './types';
 import { DocumentMerger } from './helper/document-merger';
 import { DocumentManager } from './helper/document-manager';
+import { semanticTokensLegend } from './helper/semantic-token-builder';
 
 function createConfig(preset?: IConfiguration): IConfiguration {
   return {
@@ -41,6 +43,7 @@ export abstract class CoreContext extends EventEmitter implements IContext {
   abstract readonly fs: IFileSystem;
   abstract readonly documentManager: DocumentManager;
   abstract readonly documentMerger: DocumentMerger;
+  abstract createSemanticTokensBuilder(): SemanticTokensBuilder;
 
   protected _features: IContextFeatures;
   protected _configuration: IConfiguration;
@@ -100,6 +103,13 @@ export abstract class CoreContext extends EventEmitter implements IContext {
           identifier: LanguageId,
           interFileDependencies: false,
           workspaceDiagnostics: false
+        },
+        semanticTokensProvider: {
+          legend: {
+            tokenTypes: semanticTokensLegend.tokenTypes,
+            tokenModifiers: semanticTokensLegend.tokenModifiers,
+          },
+          full: true
         },
         textDocumentSync: 2 // incremental
       }

@@ -9,6 +9,7 @@ import {
   activateSignature,
   activateSubscriptions,
   activateSymbol,
+  activateSemantic,
   IContext
 } from '../../packages/core/src';
 
@@ -24,6 +25,7 @@ context.on('ready', (ctx: IContext) => {
   activateSignature(ctx);
   activateSubscriptions(ctx);
   activateSymbol(ctx);
+  activateSemantic(ctx);
 });
 
 context.listen();
