@@ -1,4 +1,4 @@
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+import { createConnection, ProposedFeatures, SemanticTokensBuilder } from 'vscode-languageserver/node';
 
 import { CoreContext, DocumentManager, DocumentMerger } from 'greybel-languageserver-core';
 import { FileSystem } from './fs';
@@ -16,5 +16,9 @@ export class NodeContext extends CoreContext {
     this.documentMerger = new DocumentMerger();
     this.connection = createConnection(ProposedFeatures.all);
     this.fs = new FileSystem(this);
+  }
+
+  createSemanticTokensBuilder(): SemanticTokensBuilder {
+    return new SemanticTokensBuilder();
   }
 }

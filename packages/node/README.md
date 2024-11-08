@@ -18,6 +18,7 @@ It supports the following providers:
 - document symbol
 - workspace symbol
 - diagnostic
+- semantic tokens
 
 ## Install
 
@@ -31,6 +32,8 @@ greybel-languageserver
 ```
 
 ## Example implementations
+
+A collection of IDEs implementing `greybel-languageserver`.
 
 #### VSCode implementation
 ```ts
@@ -80,11 +83,12 @@ Install [LSP Package](https://lsp.sublimetext.io/) and create the following conf
       "command": ["greybel-languageserver", "--stdio"],
       "selector": "source.greyscript"
     }
-  }
+  },
+  "semantic_highlighting": true
 }
 ```
 
-Example sublime syntax file (for testing)
+Sublime syntax file (will highlighting will be done via semantic provider therefore there is no need to add anything here)
 ```yaml
 %YAML 1.2
 ---
@@ -97,6 +101,61 @@ contexts:
   main:
     - match: '.+'
       scope: text.greyscript
+```
+
+#### IntelliJ IDEA
+How to setup:
+- [Install greybel-languageserver](#install)
+- Install the plugin LSP4IJ
+- Goto "Languages & Frameworks > Language Servers"
+- Click at the "+" icon
+- Enter "greyscript" as name
+- Enter "greybel-languageserver  --stdio" as command
+- Add filename patterns:
+  - File name pattern: "*.src"
+  - Language Id: "greyscript"
+- Restart IntelliJ
+- Done
+
+#### nvim
+Add the following configuration to `init.vim`.
+```vim
+" Install vim-plug if it's not already installed
+call plug#begin('~/.vim/plugged')
+
+" Install LSP config plugin
+Plug 'neovim/nvim-lspconfig'
+
+call plug#end()
+
+" LSP configuration for greybel-languageserver
+lua <<EOF
+  local configs = require'lspconfig.configs'
+  local lspconfig = require'lspconfig'
+
+  -- Enable debug-level logging
+  vim.lsp.set_log_level("debug")
+
+  if not configs.greybel then
+    configs.greybel = {
+      default_config = {
+        cmd = { "greybel-languageserver", "--stdio" },
+        filetypes = { "src" },
+        root_dir = lspconfig.util.root_pattern(".git", vim.fn.getcwd()),
+        settings = {},
+        on_attach = function(client, bufnr)           -- Optional on_attach function
+          -- Set up hover keybinding here
+          vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', { noremap = true, silent = true })
+        end,
+      },
+    }
+  end
+
+  -- Register and start the greybel LSP
+  lspconfig.greybel.setup{}
+EOF
+
+autocmd BufRead,BufNewFile *.src set filetype=src
 ```
 
 ## How to add tooltips
