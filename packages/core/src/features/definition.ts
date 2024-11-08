@@ -35,8 +35,12 @@ const findAllDefinitions = async (
       line: assignment.end.line - 1,
       character: assignment.end.character - 1
     };
+    const rootScope = getRootScope(assignment);
+    if (!rootScope) continue;
+    const uri = refMap.get(rootScope);
+    if (!uri) continue;
     const definitionLink: DefinitionLink = {
-      targetUri: refMap.get(getRootScope(assignment)),
+      targetUri: uri,
       targetRange: { start, end },
       targetSelectionRange: { start, end }
     };
