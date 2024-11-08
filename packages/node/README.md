@@ -2,23 +2,30 @@
 
 [![greybel-languageserver](https://circleci.com/gh/ayecue/greybel-languageserver.svg?style=svg)](https://circleci.com/gh/ayecue/greybel-languageserver)
 
-Language server for GreyScript. Provides several features such as auto-completion, hover tooltips and more.
+greybel-languageserver` is a Language Server for GreyScript that offers a variety of features, including:
 
-Should work with any other client which is following [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide). Feel free to take a look at a full [implementation](https://github.com/ayecue/greybel-vs) into VSCode.
+- Auto-completion
+- Hover tooltips
+- Syntax highlighting and more
 
-## Supported providers
+This language server is compatible with any client that follows the [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide). 
 
-It supports the following providers:
-- completion
-- hover
-- color
-- definition
-- formatter
-- signature help
-- document symbol
-- workspace symbol
-- diagnostic
-- semantic tokens
+For an example of how it integrates with a popular editor, take a look at the [examples](#example-implementations).
+
+## Supported Providers
+
+`greybel-languageserver` supports the following language server protocol (LSP) features:
+
+- **Completion**: Auto-completion suggestions for code.
+- **Hover**: Displays information about a symbol when you hover over it.
+- **Color**: Color information for syntax highlighting and theming.
+- **Definition**: Navigate to the definition of a symbol.
+- **Formatter**: Automatically format the code according to set rules.
+- **Signature Help**: Shows function or method signatures while typing.
+- **Document Symbol**: Lists all symbols in a document (e.g., functions, classes).
+- **Workspace Symbol**: Search for symbols across the workspace.
+- **Diagnostic**: Provides error, warning, and information diagnostics.
+- **Semantic Tokens**: Enhanced token classification for syntax highlighting and analysis.
 
 ## Install
 
@@ -31,11 +38,20 @@ npm install -g greybel-languageserver
 greybel-languageserver
 ```
 
-## Example implementations
+## Example Implementations
 
-A collection of IDEs implementing `greybel-languageserver`.
+This section provides a collection of IDEs that implement the `greybel-languageserver`.
 
-#### VSCode implementation
+- [VSCode](#vscode): Visual Studio Code setup for `greybel-languageserver`.
+- [Sublime Text](#sublime): Instructions for integrating with Sublime Text.
+- [IntelliJ](#intellij): Guide for using `greybel-languageserver` with IntelliJ.
+- [Neovim (nvim)](#nvim): Configuration for Neovim users.
+
+Any other IDEs that follow the [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide) should also work with `greybel-languageserver`.
+
+#### VSCode
+
+1. Create language client file.
 ```ts
 import * as path from 'path';
 import {
@@ -72,8 +88,10 @@ client.registerProposedFeatures();
 client.start();
 ```
 
-#### Sublime implementation
-Install [LSP Package](https://lsp.sublimetext.io/) and create the following configuration:
+#### Sublime
+
+1. Install the [LSP Package](https://lsp.sublimetext.io/) from the Sublime Text Package Control.
+2. Create the following LSP client configuration in your Sublime settings:
 ```json
 {
   "show_diagnostics_panel_on_save": 0,
@@ -88,7 +106,7 @@ Install [LSP Package](https://lsp.sublimetext.io/) and create the following conf
 }
 ```
 
-Sublime syntax file (will highlighting will be done via semantic provider therefore there is no need to add anything here)
+3. Create a Sublime syntax file for greyscript. The highlighting will be provided via the semantic provider, so there's no need to add additional patterns here. Use the following configuration:
 ```yaml
 %YAML 1.2
 ---
@@ -103,22 +121,27 @@ contexts:
       scope: text.greyscript
 ```
 
-#### IntelliJ IDEA
-How to setup:
-- [Install greybel-languageserver](#install)
-- Install the plugin LSP4IJ
-- Goto "Languages & Frameworks > Language Servers"
-- Click at the "+" icon
-- Enter "greyscript" as name
-- Enter "greybel-languageserver  --stdio" as command
-- Add filename patterns:
-  - File name pattern: "*.src"
-  - Language Id: "greyscript"
-- Restart IntelliJ
-- Done
+#### IntelliJ
+
+To set up `greybel-languageserver` in IntelliJ, follow these steps:
+
+1. [Install greybel-languageserver](#install).
+2. Install the `LSP4IJ` plugin from the JetBrains Plugin Marketplace.
+3. Go to **Languages & Frameworks > Language Servers**.
+4. Click the "+" icon to add a new language server configuration.
+5. In the **Name** field, enter `greyscript`.
+6. In the **Command** field, enter `greybel-languageserver --stdio`.
+7. In the **Filename Patterns** section:
+   - Set **File Name Pattern** to `*.src`.
+   - Set **Language Id** to `greyscript`.
+8. Restart IntelliJ.
+
+You should now have `greybel-languageserver` set up and ready to use with IntelliJ.
+
 
 #### nvim
-Add the following configuration to `init.vim`.
+
+1. Add the following configuration to your `init.vim`:
 ```vim
 " Install vim-plug if it's not already installed
 call plug#begin('~/.vim/plugged')
@@ -157,15 +180,18 @@ EOF
 
 autocmd BufRead,BufNewFile *.src set filetype=src
 ```
+2. Don't forget to run :PlugInstall to install the necessary plugins.
 
-## How to add tooltips
+This configuration ensures that greybel-languageserver will be properly integrated into Neovim, and that .src files will be recognized with the correct syntax highlighting and LSP features.
 
-You can add your own meta descriptions in [this repository](https://github.com/ayecue/greyscript-meta). The workflow for this is as follows:
-- create a PR with your changes in the [meta repository](https://github.com/ayecue/greyscript-meta)
-- create a PR with the raised version to this repository
+## How to Add Tooltips
 
-Additionally, there is the option to define methods via comments in the code.
+Tooltips in `greybel-languageserver` can help provide additional context, such as method descriptions, to users. You can contribute your own tooltips by following this workflow:
 
+1. Fork and create a pull request (PR) with your changes to the [greyscript-meta repository](https://github.com/ayecue/greyscript-meta), where the meta descriptions are stored.
+2. Once your changes are merged, create a separate PR in this repository to update the version of `greybel-languageserver` to include the new meta descriptions.
+
+Additionally, you can define method-specific tooltips directly in the code using comments. This allows for quick, tooltips for individual methods.
 ```js
 // @type Bar
 // @property {string} virtualMoo
