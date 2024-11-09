@@ -3,45 +3,30 @@ import {
   ASTIndexExpression,
   ASTMemberExpression
 } from 'miniscript-core';
-import { CompletionItem as EntityCompletionItem } from 'miniscript-type-analyzer';
+import { CompletionItem as EntityCompletionItem, IEntity } from 'miniscript-type-analyzer';
 import type {
   CompletionItem,
   TextDocumentPositionParams
 } from 'vscode-languageserver';
 
-import { getCompletionItemKind } from '../helper/kind';
 import { LookupHelper } from '../helper/lookup-type';
 import { IContext } from '../types';
 import { AVAILABLE_CONSTANTS } from './autocomplete/constants';
 import { AVAILABLE_KEYWORDS } from './autocomplete/keywords';
 import { AVAILABLE_OPERATORS } from './autocomplete/operators';
-
-export const transformToCompletionItems = (
-  identifer: Map<string, EntityCompletionItem>
-) => {
-  const items: CompletionItem[] = [];
-
-  for (const [property, item] of identifer) {
-    items.push({
-      label: property,
-      kind: getCompletionItemKind(item.kind)
-    });
-  }
-
-  return items;
-};
+import { CompletionListBuilder } from '../helper/completion-list-builder';
 
 export const getPropertyCompletionList = async (
   helper: LookupHelper,
   item: ASTBase
-): Promise<CompletionItem[]> => {
+): Promise<ReturnType<IEntity['getAllIdentifier']>> => {
   const entity = await helper.lookupBasePath(item);
 
   if (entity === null) {
-    return [];
+    return null;
   }
 
-  return transformToCompletionItems(entity.getAllIdentifier());
+  return entity.getAllIdentifier();
 };
 
 export const getDefaultCompletionList = (): CompletionItem[] => {
@@ -72,73 +57,28 @@ export function activate(context: IContext) {
 
       const helper = new LookupHelper(activeDocument.textDocument, context);
       const astResult = helper.lookupAST(params.position);
-      const completionItems: CompletionItem[] = [];
+      const completionListBuilder = new CompletionListBuilder();
       let isProperty = false;
 
       if (astResult) {
         const { closest } = astResult;
 
         if (closest instanceof ASTMemberExpression) {
-          completionItems.push(
-            ...(await getPropertyCompletionList(helper, closest))
-          );
+          completionListBuilder.addCollection(await getPropertyCompletionList(helper, closest));
           isProperty = true;
         } else if (closest instanceof ASTIndexExpression) {
-          completionItems.push(
-            ...(await getPropertyCompletionList(helper, closest))
-          );
+          completionListBuilder.addCollection(await getPropertyCompletionList(helper, closest));
           isProperty = true;
         } else {
-          completionItems.push(...getDefaultCompletionList());
+          completionListBuilder.setDefault(getDefaultCompletionList());
+          completionListBuilder.addCollection(await helper.findAllAvailableIdentifierRelatedToPosition(astResult.closest));
         }
       } else {
-        completionItems.push(...getDefaultCompletionList());
-        completionItems.push(
-          ...transformToCompletionItems(
-            helper.findAllAvailableIdentifierInRoot()
-          )
-        );
+        completionListBuilder.setDefault(getDefaultCompletionList());
+        completionListBuilder.addCollection(await helper.findAllAvailableIdentifierInRoot());
       }
 
-      if (!astResult || isProperty) {
-        return completionItems;
-      }
-
-      const existingProperties = new Set([
-        ...completionItems.map((item) => item.label)
-      ]);
-      const allImports = await activeDocument.getImports();
-
-      // get all identifer available in imports
-      for (const item of allImports) {
-        const { document } = item;
-
-        if (!document) {
-          continue;
-        }
-
-        const importHelper = new LookupHelper(item.textDocument, context);
-
-        completionItems.push(
-          ...transformToCompletionItems(
-            importHelper.findAllAvailableIdentifier(document)
-          )
-            .filter((item) => !existingProperties.has(item.label))
-            .map((item) => {
-              existingProperties.add(item.label);
-              return item;
-            })
-        );
-      }
-
-      // get all identifer available in scope
-      completionItems.push(
-        ...transformToCompletionItems(
-          helper.findAllAvailableIdentifierRelatedToPosition(astResult.closest)
-        ).filter((item) => !existingProperties.has(item.label))
-      );
-
-      return completionItems;
+      return completionListBuilder.build();
     }
   );
 

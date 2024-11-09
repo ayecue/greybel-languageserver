@@ -91,8 +91,8 @@ export class LookupHelper {
       .aggregator.resolveAvailableAssignments(item);
   }
 
-  findAllAvailableIdentifierInRoot(): Map<string, CompletionItem> {
-    const typeDoc = typeManager.get(this.document.uri);
+  async findAllAvailableIdentifierInRoot(): Promise<Map<string, CompletionItem>> {
+    const typeDoc = await this.getTypeMap();
 
     if (typeDoc == null) {
       return new Map();
@@ -103,11 +103,16 @@ export class LookupHelper {
       .scope.getAllIdentifier();
   }
 
-  findAllAvailableIdentifier(
+  async findAllAvailableIdentifier(
     root: ASTBaseBlockWithScope
-  ): Map<string, CompletionItem> {
-    const context = typeManager
-      .get(this.document.uri)
+  ): Promise<Map<string, CompletionItem>> {
+    const typeDoc = await this.getTypeMap();
+
+    if (typeDoc == null) {
+      return new Map();
+    }
+
+    const context = typeDoc
       .getScopeContext(root);
 
     if (context == null) {
@@ -117,11 +122,15 @@ export class LookupHelper {
     return context.scope.getAllIdentifier();
   }
 
-  findAllAvailableIdentifierRelatedToPosition(
+  async findAllAvailableIdentifierRelatedToPosition(
     item: ASTBase
-  ): Map<string, CompletionItem> {
-    const typeDoc = typeManager.get(this.document.uri);
+  ): Promise<Map<string, CompletionItem>> {
+    const typeDoc = await this.getTypeMap();
     const result: Map<string, CompletionItem> = new Map();
+
+    if (typeDoc == null) {
+      return result;
+    }
 
     for (const assignment of typeDoc.container.getAllIdentifier(
       SignatureDefinitionBaseType.General
