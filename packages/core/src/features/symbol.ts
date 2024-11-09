@@ -20,14 +20,14 @@ const findAllAssignments = (
   const result: SymbolInformation[] = [];
 
   for (const assignmentItem of assignments) {
-    const assignment = assignmentItem as ASTAssignmentStatement;
+    const assignment = assignmentItem.node as ASTAssignmentStatement;
     const entity = typeDoc.resolveNamespace(assignment.variable, true);
 
     if (entity == null) {
       continue;
     }
 
-    const label = entity?.label ?? createExpressionId(assignmentItem.variable);
+    const label = entity?.label ?? createExpressionId(assignment.variable);
     const kind = entity?.kind ? getSymbolItemKind(entity.kind) : 13; // SymbolKind.Variable
 
     const start = {

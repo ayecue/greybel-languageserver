@@ -253,6 +253,7 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
     });
     const chunk = parser.parseChunk() as ASTChunkGreyScript;
 
+    this._context.documentMerger.flushCacheKey(document.uri);
     typeManager.analyze(document.uri, chunk);
 
     return new ActiveDocument({

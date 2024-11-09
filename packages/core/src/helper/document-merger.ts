@@ -33,11 +33,16 @@ export class DocumentMerger implements IDocumentMerger {
   }
 
   private registerCacheKey(key: number, documentUri: string) {
-    const oldKey = this.keyToDocumentUriMap.get(documentUri);
-    if (oldKey) {
-      this.results.delete(oldKey);
-    }
+    this.flushCacheKey(documentUri);
     this.keyToDocumentUriMap.set(documentUri, key);
+  }
+
+  flushCacheKey(documentUri: string) {
+    const key = this.keyToDocumentUriMap.get(documentUri);
+    if (key) {
+      this.results.delete(key);
+      this.keyToDocumentUriMap.delete(documentUri);
+    }
   }
 
   private async process(

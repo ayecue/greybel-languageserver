@@ -11,7 +11,6 @@ import type {
 
 import { LookupHelper } from '../helper/lookup-type';
 import { IContext } from '../types';
-import { getRootScope } from '../helper/get-root-scope';
 
 const findAllDefinitions = async (
   helper: LookupHelper,
@@ -23,24 +22,22 @@ const findAllDefinitions = async (
   const refMap = helper.getRefMapForScopes();
 
   for (const assignment of assignments) {
-    if (!assignment.start || !assignment.end) {
+    const node = assignment.node;
+
+    if (!node.start || !node.end) {
       continue;
     }
 
     const start: Position = {
-      line: assignment.start.line - 1,
-      character: assignment.start.character - 1
+      line: node.start.line - 1,
+      character: node.start.character - 1
     };
     const end: Position = {
-      line: assignment.end.line - 1,
-      character: assignment.end.character - 1
+      line: node.end.line - 1,
+      character: node.end.character - 1
     };
-    const rootScope = getRootScope(assignment);
-    if (!rootScope) continue;
-    const uri = refMap.get(rootScope);
-    if (!uri) continue;
     const definitionLink: DefinitionLink = {
-      targetUri: uri,
+      targetUri: assignment.source,
       targetRange: { start, end },
       targetSelectionRange: { start, end }
     };
