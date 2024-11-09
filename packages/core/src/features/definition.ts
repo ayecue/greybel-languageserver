@@ -12,6 +12,10 @@ import type {
 import { LookupHelper } from '../helper/lookup-type';
 import { IContext } from '../types';
 
+const definitionLinkToString = (link: DefinitionLink): string => {
+  return `${link.targetUri}:${link.targetRange.start.line}:${link.targetRange.start.character}-${link.targetRange.end.line}:${link.targetRange.end.character}`;
+}
+
 const findAllDefinitions = async (
   helper: LookupHelper,
   item: ASTBase,
@@ -19,7 +23,7 @@ const findAllDefinitions = async (
 ): Promise<DefinitionLink[]> => {
   const assignments = await helper.findAllAssignmentsOfItem(item, root);
   const definitions: DefinitionLink[] = [];
-  const refMap = helper.getRefMapForScopes();
+  const visited = new Set<string>();
 
   for (const assignment of assignments) {
     const node = assignment.node;
@@ -41,7 +45,13 @@ const findAllDefinitions = async (
       targetRange: { start, end },
       targetSelectionRange: { start, end }
     };
+    const linkString = definitionLinkToString(definitionLink);
 
+    if (visited.has(linkString)) {
+      continue;
+    }
+
+    visited.add(linkString);
     definitions.push(definitionLink);
   }
 

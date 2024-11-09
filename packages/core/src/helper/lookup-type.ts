@@ -35,7 +35,6 @@ export class LookupHelper {
   readonly document: TextDocument;
   readonly context: IContext;
 
-  private refMapForScopes: Map<ASTBaseBlockWithScope, string>;
   private mergedTypeMap: TypeDocument;
 
   constructor(document: TextDocument, context: IContext) {
@@ -43,21 +42,6 @@ export class LookupHelper {
     this.context = context;
 
     this.mergedTypeMap = null;
-    this.refMapForScopes = null;
-  }
-
-  getRefMapForScopes(): Map<ASTBaseBlockWithScope, string> {
-    if (this.refMapForScopes == null) {
-      this.refMapForScopes = new Map<ASTBaseBlockWithScope, string>();
-
-      this.context.documentManager.results.forEach((activeDocument: IActiveDocument) => {
-        if (activeDocument.document) {
-          this.refMapForScopes.set(activeDocument.document, activeDocument.textDocument.uri);
-        }
-      });
-    }
-
-    return this.refMapForScopes;
   }
 
   async getTypeMap(): Promise<TypeDocument> {
