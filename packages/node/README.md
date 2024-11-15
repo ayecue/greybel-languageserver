@@ -46,6 +46,7 @@ This section provides a collection of IDEs that implement the `greybel-languages
 - [Sublime Text](#sublime): Instructions for integrating with Sublime Text.
 - [IntelliJ](#intellij): Guide for using `greybel-languageserver` with IntelliJ.
 - [Neovim (nvim)](#nvim): Configuration for Neovim users.
+- [Visual Studio](#visual-studio): Learn how to set up a Visual Studio extension using LSP to add support for the GreyScript language in Visual Studio.
 
 Any other IDEs that follow the [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide) should also work with `greybel-languageserver`.
 
@@ -183,6 +184,120 @@ autocmd BufRead,BufNewFile *.src set filetype=src
 2. Don't forget to run :PlugInstall to install the necessary plugins.
 
 This configuration ensures that greybel-languageserver will be properly integrated into Neovim, and that .src files will be recognized with the correct syntax highlighting and LSP features.
+
+#### Visual Studio
+
+1. Begin by following the [official Visual Studio Extensibility Tutorial](https://learn.microsoft.com/de-de/visualstudio/extensibility/adding-an-lsp-extension?view=vs-2022#get-started) to create a new Visual Studio extension. This will set up the basic structure for the extension project.
+2. In this step, we define a custom content type for the language we are adding (e.g., GreyScript). This will help Visual Studio identify files based on their extension or content type. Create a new class called ContentTypeDefinitions.cs:
+```csharp
+using Microsoft.VisualStudio.LanguageServer.Client;
+using Microsoft.VisualStudio.Utilities;
+using System.ComponentModel.Composition;
+
+namespace GreyScript
+{
+    internal static class GreyScriptContentDefinition
+    {
+        [Export]
+        [Name("greyscript")]
+        [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]
+        public static ContentTypeDefinition GreyScriptContentTypeDefinition;
+
+        [Export]
+        [FileExtension(".ms")]
+        [ContentType("greyscript")]
+        public static FileExtensionToContentTypeDefinition GreyScriptFileExtensionDefinition;
+    }
+}
+```
+3. Next, you will create the LanguageClient.cs class that connects Visual Studio to the language server. This class implements ILanguageClient, which is essential for interacting with the LSP. Create a new file called LanguageClient.cs:
+```csharp
+using Microsoft.VisualStudio.LanguageServer.Client;
+using Microsoft.VisualStudio.Threading;
+using Microsoft.VisualStudio.Utilities;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace GreyScript
+{
+    [Export(typeof(ILanguageClient))]
+    [ContentType("greyscript")]
+    [RunOnContext(RunningContext.RunOnHost)]
+    public class GreyScriptLanguageClient : ILanguageClient
+    {
+        public event AsyncEventHandler<EventArgs> StartAsync;
+        public event AsyncEventHandler<EventArgs> StopAsync;
+        public object InitializationOptions => null;
+        public IEnumerable<string> FilesToWatch => null;
+        public bool ShowNotificationOnInitializeFailed => true;
+        public string Name => "GreyScript Language Client";
+        public IEnumerable<string> ConfigurationSections => new[] { "greyscript" };
+
+        public Task<Connection> ActivateAsync(CancellationToken token)
+        {
+            var info = new ProcessStartInfo
+            {
+                FileName = @"C:\Users\myUser\AppData\Roaming\npm\greybel-languageserver.cmd",
+                Arguments = "--stdio",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            var process = new Process { StartInfo = info };
+
+            if (process.Start())
+            {
+                Debug.WriteLine("Language server started successfully.");
+                return Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
+            }
+
+            Debug.WriteLine("Failed to start language server.");
+            return Task.FromResult<Connection>(null);
+        }
+
+        public async Task OnLoadedAsync()
+        {
+            if (StartAsync != null)
+            {
+                await StartAsync.InvokeAsync(this, EventArgs.Empty);
+            }
+        }
+
+        public async Task StopServerAsync()
+        {
+            if (StopAsync != null)
+            {
+                await StopAsync.InvokeAsync(this, EventArgs.Empty);
+            }
+        }
+
+        public Task OnServerInitializedAsync()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<InitializationFailureContext> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
+        {
+            string message = "GreyScript failed to activate, now we can't test LSP! :(";
+            string exception = initializationState.InitializationException?.ToString() ?? string.Empty;
+            message = $"{message}\n {exception}";
+
+            var failureContext = new InitializationFailureContext()
+            {
+                FailureMessage = message,
+            };
+
+            return Task.FromResult(failureContext);
+        }
+    }
+}
+```
+4. At this point, you have a basic framework for integrating a custom language server into Visual Studio. You can customize the content type, server activation, or extend the language client.
 
 ## How to Add Tooltips
 
