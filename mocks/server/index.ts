@@ -11,6 +11,7 @@ import {
   activateSymbol,
   activateSemantic,
   activateFoldingRange,
+  activateReferences,
   IContext
 } from '../../packages/core/src';
 
@@ -28,6 +29,7 @@ context.on('ready', (ctx: IContext) => {
   activateSymbol(ctx);
   activateSemantic(ctx);
   activateFoldingRange(ctx);
+  activateReferences(ctx);
 });
 
 context.listen();

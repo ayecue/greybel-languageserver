@@ -48,18 +48,19 @@ export function activate(context: IContext) {
     const target = await context.fs.findExistingPath(
       Utils.joinPath(rootDir, importAst.directory).toString()
     );
-    const output = target == null ? [
-      'Cannot open file.'
-    ] : [
-      `[Imports file "${path.basename(
-        target
-      )}" inside this code](${target})`,
-      '***',
-      'Click the link above to open the file.',
-      '',
-      'Use the build command to create an installer',
-      'file which will bundle all dependencies.'
-    ];
+    const output =
+      target == null
+        ? ['Cannot open file.']
+        : [
+            `[Imports file "${path.basename(
+              target
+            )}" inside this code](${target})`,
+            '***',
+            'Click the link above to open the file.',
+            '',
+            'Use the build command to create an installer',
+            'file which will bundle all dependencies.'
+          ];
 
     hoverText.appendMarkdown(output.join('\n'));
 
@@ -84,15 +85,16 @@ export function activate(context: IContext) {
       result.toString(),
       resultAlt.toString()
     );
-    const output: string[] = target == null ? [
-      'Cannot open file.'
-    ] : [
-      `[Inserts file "${path.basename(
-        target
-      )}" inside this code when building](${target})`,
-      '***',
-      'Click the link above to open the file.'
-    ];
+    const output: string[] =
+      target == null
+        ? ['Cannot open file.']
+        : [
+            `[Inserts file "${path.basename(
+              target
+            )}" inside this code when building](${target})`,
+            '***',
+            'Click the link above to open the file.'
+          ];
 
     hoverText.appendMarkdown(output.join('\n'));
 

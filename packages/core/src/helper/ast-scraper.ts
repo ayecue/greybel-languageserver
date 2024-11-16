@@ -206,54 +206,57 @@ const getScraperMap = function (
         visit(item.body[index], level);
       }
     },
-    InvalidCodeExpression: () => { }
+    InvalidCodeExpression: () => {}
   };
 };
 
 export interface ScraperState {
   exit: boolean;
-  skip?: boolean;
+  skip: boolean;
 }
 
-export type ScraperCallback = (item: any, level: number) => ScraperState | null;
+export type ScraperCallback = (
+  item: any,
+  level: number
+) => Partial<ScraperState> | null;
 
 export class ScraperWalker {
   map: ScraperMap;
   callback: ScraperCallback;
   state: ScraperState;
 
-  constructor(callback: ScraperCallback) {
-    this.map = getScraperMap(this.visit.bind(this));
+  constructor(callback: ScraperCallback, customMap: ScraperMap = {}) {
+    this.map = Object.assign(getScraperMap(this.visit.bind(this)), customMap);
     this.callback = callback;
     this.state = {
-      exit: false
+      exit: false,
+      skip: false
     };
   }
 
   visit(o: ASTBase, level: number = 0) {
-    const me = this;
-
+    if (this.state.exit) return;
     if (o == null) return;
-
     if (o.type == null) {
       console.error('Error ast type:', o);
       throw new Error('Unexpected as type');
     }
 
-    const state = me.callback(o, level);
+    const state = this.callback(o, level);
 
     if (state != null) {
-      me.state = state as ScraperState;
+      Object.assign(this.state, state);
     }
 
-    if (me.state.exit || me.state.skip) {
+    if (this.state.exit || this.state.skip) {
+      this.state.skip = false;
       return;
     }
 
-    const next = me.map[o.type];
+    const next = this.map[o.type];
 
     if (next != null) {
-      next.call(me, o, level + 1);
+      next.call(this, o, level + 1);
     }
   }
 }
@@ -261,7 +264,7 @@ export class ScraperWalker {
 type ScraperValidateEx = (
   item: any,
   level: number
-) => { valid?: boolean; skip?: boolean; exit?: boolean } | void;
+) => (Partial<ScraperState> & { valid?: boolean }) | void;
 
 export function findEx(
   validate: ScraperValidateEx,

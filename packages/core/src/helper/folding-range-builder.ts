@@ -1,9 +1,7 @@
-import {
-  ASTBase,
-  ASTType
-} from 'miniscript-core';
+import { ASTBase, ASTType } from 'miniscript-core';
 import type { FoldingRange } from 'vscode-languageserver';
 import { FoldingRangeKind } from 'vscode-languageserver';
+
 import { IActiveDocument } from '../types';
 import { ScraperWalker } from './ast-scraper';
 
@@ -15,8 +13,8 @@ export function buildFoldingRanges(item: IActiveDocument): FoldingRange[] {
     switch (item.type) {
       case ASTType.Comment:
         ranges.push({
-          startLine: item.start.line,
-          endLine: item.end.line,
+          startLine: item.start.line - 1,
+          endLine: item.end.line - 1,
           kind: FoldingRangeKind.Comment
         });
         return null;
@@ -30,8 +28,8 @@ export function buildFoldingRanges(item: IActiveDocument): FoldingRange[] {
       case ASTType.ElseifClause:
       case ASTType.ElseClause: {
         ranges.push({
-          startLine: item.start.line,
-          endLine: item.end.line,
+          startLine: item.start.line - 1,
+          endLine: item.end.line - 1,
           kind: FoldingRangeKind.Region
         });
         return null;

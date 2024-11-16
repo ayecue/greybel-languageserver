@@ -28,7 +28,9 @@ export class DocumentURIBuilder {
 
   getFromWorkspaceFolder(path: string): string {
     if (this.workspaceFolderUri == null) {
-      console.warn('Workspace folders are not available. Falling back to only relative paths.');
+      console.warn(
+        'Workspace folders are not available. Falling back to only relative paths.'
+      );
       return Utils.joinPath(this.rootPath, path).toString();
     }
 
@@ -61,7 +63,9 @@ export class ActiveDocument implements IActiveDocument {
     return Utils.joinPath(URI.parse(this.textDocument.uri), '..');
   }
 
-  private async getNativeImports(workspaceFolderUri: URI = null): Promise<string[]> {
+  private async getNativeImports(
+    workspaceFolderUri: URI = null
+  ): Promise<string[]> {
     if (this.document == null) {
       return [];
     }
@@ -70,19 +74,27 @@ export class ActiveDocument implements IActiveDocument {
     const rootPath = this.getDirectory();
     const builder = new DocumentURIBuilder(rootPath, workspaceFolderUri);
     const context = this.documentManager.context;
-    const imports = await Promise.all(rootChunk.nativeImports
-      .filter((nativeImport) => nativeImport.directory)
-      .map((nativeImport) => {
-        if (nativeImport.directory.startsWith('/')) {
-          return context.fs.findExistingPath(builder.getFromWorkspaceFolder(nativeImport.directory));
-        }
-        return context.fs.findExistingPath(builder.getFromRootPath(nativeImport.directory));
-      }));
+    const imports = await Promise.all(
+      rootChunk.nativeImports
+        .filter((nativeImport) => nativeImport.directory)
+        .map((nativeImport) => {
+          if (nativeImport.directory.startsWith('/')) {
+            return context.fs.findExistingPath(
+              builder.getFromWorkspaceFolder(nativeImport.directory)
+            );
+          }
+          return context.fs.findExistingPath(
+            builder.getFromRootPath(nativeImport.directory)
+          );
+        })
+    );
 
     return imports.filter((path) => path != null);
   }
 
-  private async getImportsAndIncludes(workspaceFolderUri: URI = null): Promise<string[]> {
+  private async getImportsAndIncludes(
+    workspaceFolderUri: URI = null
+  ): Promise<string[]> {
     if (this.document == null) {
       return [];
     }
@@ -130,7 +142,8 @@ export class ActiveDocument implements IActiveDocument {
         URI.parse(this.textDocument.uri)
       );
     const nativeImports = await this.getNativeImports(workspacePathUri);
-    const importsAndIncludes = await this.getImportsAndIncludes(workspacePathUri);
+    const importsAndIncludes =
+      await this.getImportsAndIncludes(workspacePathUri);
     const dependencies: Set<string> = new Set([
       ...nativeImports,
       ...importsAndIncludes

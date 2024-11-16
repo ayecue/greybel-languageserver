@@ -3,18 +3,21 @@ import {
   ASTIndexExpression,
   ASTMemberExpression
 } from 'miniscript-core';
-import { CompletionItem as EntityCompletionItem, IEntity } from 'miniscript-type-analyzer';
+import {
+  CompletionItem as EntityCompletionItem,
+  IEntity
+} from 'miniscript-type-analyzer';
 import type {
   CompletionItem,
   TextDocumentPositionParams
 } from 'vscode-languageserver';
 
+import { CompletionListBuilder } from '../helper/completion-list-builder';
 import { LookupHelper } from '../helper/lookup-type';
 import { IContext } from '../types';
 import { AVAILABLE_CONSTANTS } from './autocomplete/constants';
 import { AVAILABLE_KEYWORDS } from './autocomplete/keywords';
 import { AVAILABLE_OPERATORS } from './autocomplete/operators';
-import { CompletionListBuilder } from '../helper/completion-list-builder';
 
 export const getPropertyCompletionList = async (
   helper: LookupHelper,
@@ -64,18 +67,28 @@ export function activate(context: IContext) {
         const { closest } = astResult;
 
         if (closest instanceof ASTMemberExpression) {
-          completionListBuilder.addCollection(await getPropertyCompletionList(helper, closest));
+          completionListBuilder.addCollection(
+            await getPropertyCompletionList(helper, closest)
+          );
           isProperty = true;
         } else if (closest instanceof ASTIndexExpression) {
-          completionListBuilder.addCollection(await getPropertyCompletionList(helper, closest));
+          completionListBuilder.addCollection(
+            await getPropertyCompletionList(helper, closest)
+          );
           isProperty = true;
         } else {
           completionListBuilder.setDefault(getDefaultCompletionList());
-          completionListBuilder.addCollection(await helper.findAllAvailableIdentifierRelatedToPosition(astResult.closest));
+          completionListBuilder.addCollection(
+            await helper.findAllAvailableIdentifierRelatedToPosition(
+              astResult.closest
+            )
+          );
         }
       } else {
         completionListBuilder.setDefault(getDefaultCompletionList());
-        completionListBuilder.addCollection(await helper.findAllAvailableIdentifierInRoot());
+        completionListBuilder.addCollection(
+          await helper.findAllAvailableIdentifierInRoot()
+        );
       }
 
       return completionListBuilder.build();

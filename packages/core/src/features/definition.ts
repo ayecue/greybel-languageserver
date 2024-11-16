@@ -4,8 +4,8 @@ import {
   ASTMemberExpression
 } from 'miniscript-core';
 import type {
-  Location,
   DefinitionParams,
+  Location,
   Position
 } from 'vscode-languageserver';
 
@@ -14,7 +14,7 @@ import { IContext } from '../types';
 
 const definitionLinkToString = (link: Location): string => {
   return `${link.uri}:${link.range.start.line}:${link.range.start.character}-${link.range.end.line}:${link.range.end.character}`;
-}
+};
 
 const findAllDefinitions = async (
   helper: LookupHelper,
