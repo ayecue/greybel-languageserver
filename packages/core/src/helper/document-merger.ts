@@ -1,12 +1,10 @@
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import {
-  Document as TypeDocument
-} from 'miniscript-type-analyzer';
 import LRU from 'lru-cache';
+import { Document as TypeDocument } from 'miniscript-type-analyzer';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { IActiveDocument, IContext, IDocumentMerger } from '../types';
-import typeManager from './type-manager';
 import { hash } from './hash';
+import typeManager from './type-manager';
 
 export class DocumentMerger implements IDocumentMerger {
   readonly results: LRU<number, TypeDocument>;
@@ -20,12 +18,17 @@ export class DocumentMerger implements IDocumentMerger {
     });
   }
 
-  private createCacheKey(source: TextDocument, documents: IActiveDocument[]): number {
+  private createCacheKey(
+    source: TextDocument,
+    documents: IActiveDocument[]
+  ): number {
     let result = hash(`${source.uri}-${source.version}`);
 
     for (let index = 0; index < documents.length; index++) {
       const document = documents[index];
-      result ^= hash(`${document.textDocument.uri}-${document.textDocument.version}`);
+      result ^= hash(
+        `${document.textDocument.uri}-${document.textDocument.version}`
+      );
       result = result >>> 0;
     }
 
@@ -74,7 +77,9 @@ export class DocumentMerger implements IDocumentMerger {
 
     this.registerCacheKey(cacheKey, documentUri);
 
-    const importUris = await context.documentManager.get(document).getDependencies();
+    const importUris = await context.documentManager
+      .get(document)
+      .getDependencies();
 
     await Promise.all(
       importUris.map(async (itemUri) => {
@@ -124,8 +129,12 @@ export class DocumentMerger implements IDocumentMerger {
 
     this.registerCacheKey(cacheKey, documentUri);
 
-    const importUris = await context.documentManager.get(document).getDependencies();
-    const refs: Map<string, TypeDocument | null> = new Map([[documentUri, null]]);
+    const importUris = await context.documentManager
+      .get(document)
+      .getDependencies();
+    const refs: Map<string, TypeDocument | null> = new Map([
+      [documentUri, null]
+    ]);
 
     await Promise.all(
       importUris.map(async (itemUri) => {

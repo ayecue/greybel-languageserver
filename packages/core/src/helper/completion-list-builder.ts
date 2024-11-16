@@ -1,5 +1,6 @@
-import { IEntity } from 'miniscript-type-analyzer'
+import { IEntity } from 'miniscript-type-analyzer';
 import type { CompletionItem } from 'vscode-languageserver';
+
 import { getCompletionItemKind } from './kind';
 
 export class CompletionListBuilder {

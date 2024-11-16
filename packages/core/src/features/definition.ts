@@ -4,25 +4,25 @@ import {
   ASTMemberExpression
 } from 'miniscript-core';
 import type {
-  DefinitionLink,
   DefinitionParams,
+  Location,
   Position
 } from 'vscode-languageserver';
 
 import { LookupHelper } from '../helper/lookup-type';
 import { IContext } from '../types';
 
-const definitionLinkToString = (link: DefinitionLink): string => {
-  return `${link.targetUri}:${link.targetRange.start.line}:${link.targetRange.start.character}-${link.targetRange.end.line}:${link.targetRange.end.character}`;
-}
+const definitionLinkToString = (link: Location): string => {
+  return `${link.uri}:${link.range.start.line}:${link.range.start.character}-${link.range.end.line}:${link.range.end.character}`;
+};
 
 const findAllDefinitions = async (
   helper: LookupHelper,
   item: ASTBase,
   root: ASTBaseBlockWithScope
-): Promise<DefinitionLink[]> => {
+): Promise<Location[]> => {
   const assignments = await helper.findAllAssignmentsOfItem(item, root);
-  const definitions: DefinitionLink[] = [];
+  const definitions: Location[] = [];
   const visited = new Set<string>();
 
   for (const assignment of assignments) {
@@ -40,10 +40,9 @@ const findAllDefinitions = async (
       line: node.end.line - 1,
       character: node.end.character - 1
     };
-    const definitionLink: DefinitionLink = {
-      targetUri: assignment.source,
-      targetRange: { start, end },
-      targetSelectionRange: { start, end }
+    const definitionLink: Location = {
+      uri: assignment.source,
+      range: { start, end }
     };
     const linkString = definitionLinkToString(definitionLink);
 

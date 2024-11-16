@@ -1,11 +1,11 @@
-import type { SemanticTokensParams } from 'vscode-languageserver';
+import type { FoldingRange, FoldingRangeParams } from 'vscode-languageserver';
 
-import { buildTokens } from '../helper/semantic-token-builder';
+import { buildFoldingRanges } from '../helper/folding-range-builder';
 import { IContext } from '../types';
 
 export function activate(context: IContext) {
-  context.connection.languages.semanticTokens.on(
-    async (params: SemanticTokensParams) => {
+  context.connection.languages.foldingRange.on(
+    async (params: FoldingRangeParams): Promise<FoldingRange[]> => {
       const document = await context.fs.getTextDocument(
         params.textDocument.uri
       );
@@ -20,11 +20,7 @@ export function activate(context: IContext) {
         return;
       }
 
-      const builder = context.createSemanticTokensBuilder();
-
-      buildTokens(builder, parseResult);
-
-      return builder.build();
+      return buildFoldingRanges(parseResult);
     }
   );
 }
