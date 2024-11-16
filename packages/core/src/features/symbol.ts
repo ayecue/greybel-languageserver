@@ -1,4 +1,4 @@
-import { ASTAssignmentStatement } from 'miniscript-core';
+import { ASTAssignmentStatement, ASTType } from 'miniscript-core';
 import { createExpressionId } from 'miniscript-type-analyzer';
 import type {
   DocumentSymbolParams,
@@ -20,6 +20,7 @@ const findAllAssignments = (
   const result: SymbolInformation[] = [];
 
   for (const assignmentItem of assignments) {
+    if (assignmentItem.node.type !== ASTType.AssignmentStatement) continue;
     const assignment = assignmentItem.node as ASTAssignmentStatement;
     const entity = typeDoc.resolveNamespace(assignment.variable, true);
 
