@@ -10,6 +10,7 @@ import {
   activateSubscriptions,
   activateSymbol,
   activateSemantic,
+  activateFoldingRange,
   IContext
 } from '../../packages/core/src';
 
@@ -26,6 +27,7 @@ context.on('ready', (ctx: IContext) => {
   activateSubscriptions(ctx);
   activateSymbol(ctx);
   activateSemantic(ctx);
+  activateFoldingRange(ctx);
 });
 
 context.listen();

@@ -27,9 +27,7 @@ import {
   ASTWhileStatement
 } from 'miniscript-core';
 
-export interface ScraperMap {
-  [key: string]: (item: any, level: number) => void;
-}
+export type ScraperMap = Record<string, (item: any, level: number) => void>;
 
 const getScraperMap = function (
   visit: (o: ASTBase, level: number) => any
@@ -208,18 +206,18 @@ const getScraperMap = function (
         visit(item.body[index], level);
       }
     },
-    InvalidCodeExpression: () => {}
+    InvalidCodeExpression: () => { }
   };
 };
 
-interface ScraperState {
+export interface ScraperState {
   exit: boolean;
   skip?: boolean;
 }
 
-type ScraperCallback = (item: any, level: number) => ScraperState;
+export type ScraperCallback = (item: any, level: number) => ScraperState | null;
 
-class ScraperWalker {
+export class ScraperWalker {
   map: ScraperMap;
   callback: ScraperCallback;
   state: ScraperState;
@@ -242,7 +240,11 @@ class ScraperWalker {
       throw new Error('Unexpected as type');
     }
 
-    me.state = me.callback(o, level);
+    const state = me.callback(o, level);
+
+    if (state != null) {
+      me.state = state as ScraperState;
+    }
 
     if (me.state.exit || me.state.skip) {
       return;
