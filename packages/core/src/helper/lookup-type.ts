@@ -20,7 +20,7 @@ import { Position, TextDocument } from 'vscode-languageserver-textdocument';
 
 import { IContext } from '../types';
 import * as ASTScraper from './ast-scraper';
-import { lookupBase } from './type-manager';
+import { lookupBase } from './ast-utils';
 
 export type LookupOuter = ASTBase[];
 

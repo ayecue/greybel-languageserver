@@ -18,6 +18,7 @@ export { LookupHelper } from './helper/lookup-type';
 export { MarkdownString } from './helper/markdown-string';
 export { hash } from './helper/hash';
 export { createHover, createSignatureInfo, createTooltipHeader, formatDefaultValue, formatTypes, appendTooltipBody, appendTooltipHeader } from './helper/tooltip';
-export { lookupIdentifier, lookupBase, default as typeAnalyzer } from './helper/type-manager';
+export { default as typeAnalyzer } from './helper/type-manager';
+export { lookupIdentifier, lookupBase } from './helper/ast-utils';
 export { semanticTokensLegend, buildTokens } from './helper/semantic-token-builder';
 export { CoreContext } from './context';
