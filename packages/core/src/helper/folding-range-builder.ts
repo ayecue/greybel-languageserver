@@ -23,13 +23,20 @@ export function buildFoldingRanges(item: IActiveDocument): FoldingRange[] {
       case ASTType.StringLiteral:
       case ASTType.WhileStatement:
       case ASTType.ForGenericStatement:
-      case ASTType.FunctionDeclaration:
+      case ASTType.FunctionDeclaration: {
+        ranges.push({
+          startLine: item.start.line - 1,
+          endLine: item.end.line - 1,
+          kind: FoldingRangeKind.Region
+        });
+        return null;
+      }
       case ASTType.IfClause:
       case ASTType.ElseifClause:
       case ASTType.ElseClause: {
         ranges.push({
           startLine: item.start.line - 1,
-          endLine: item.end.line - 1,
+          endLine: item.end.line - 2,
           kind: FoldingRangeKind.Region
         });
         return null;

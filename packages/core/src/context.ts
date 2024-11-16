@@ -93,7 +93,6 @@ export abstract class CoreContext extends EventEmitter implements IContext {
         hoverProvider: true,
         colorProvider: true,
         definitionProvider: true,
-        referencesProvider: true,
         foldingRangeProvider: true,
         documentFormattingProvider: true,
         signatureHelpProvider: {

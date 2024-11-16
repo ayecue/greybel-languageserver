@@ -206,7 +206,7 @@ const getScraperMap = function (
         visit(item.body[index], level);
       }
     },
-    InvalidCodeExpression: () => {}
+    InvalidCodeExpression: () => { }
   };
 };
 
@@ -235,7 +235,6 @@ export class ScraperWalker {
   }
 
   visit(o: ASTBase, level: number = 0) {
-    if (this.state.exit) return;
     if (o == null) return;
     if (o.type == null) {
       console.error('Error ast type:', o);

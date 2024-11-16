@@ -10,7 +10,6 @@ export { activate as activateSubscriptions } from './features/subscriptions';
 export { activate as activateSymbol } from './features/symbol';
 export { activate as activateSemantic } from './features/semantic';
 export { activate as activateFoldingRange } from './features/folding-range';
-export { activate as activateReferences } from './features/references';
 export * as ASTScraper from './helper/ast-scraper';
 export { ActiveDocument, DocumentManager } from './helper/document-manager';
 export { DocumentMerger } from './helper/document-merger';
