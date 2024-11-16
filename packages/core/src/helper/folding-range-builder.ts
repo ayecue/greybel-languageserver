@@ -5,13 +5,9 @@ import {
 import type { FoldingRange } from 'vscode-languageserver';
 import { FoldingRangeKind } from 'vscode-languageserver';
 import { IActiveDocument } from '../types';
-import { Parser } from 'greyscript-core';
 import { ScraperWalker } from './ast-scraper';
 
-export function buildFoldingRanges(document: IActiveDocument): FoldingRange[] {
-  const parser = new Parser(document.content, {
-    unsafe: true
-  });
+export function buildFoldingRanges(item: IActiveDocument): FoldingRange[] {
   const ranges: FoldingRange[] = [];
   const walker = new ScraperWalker((item: ASTBase, level: number) => {
     if (item.start.line === item.end.line) return null;
@@ -44,6 +40,6 @@ export function buildFoldingRanges(document: IActiveDocument): FoldingRange[] {
 
     return null;
   });
-  walker.visit(parser.parseChunk());
+  walker.visit(item.document);
   return ranges;
 }
