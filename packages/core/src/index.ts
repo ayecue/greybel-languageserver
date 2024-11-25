@@ -1,4 +1,4 @@
-export { IndentationType, IConfiguration, IContext, IFileSystem, IContextFeatures, LanguageId, ConfigurationNamespace, IActiveDocument, IDocumentManager, IDocumentMerger } from './types';
+export { IndentationType, IConfiguration, IConfigurationRequest, IContext, IFileSystem, IContextFeatures, LanguageId, ConfigurationNamespace, IActiveDocument, IDocumentManager, IDocumentMerger, TypeAnalyzerStrategy, DefaultFileExtensions } from './types';
 export { activate as activateAutocomplete } from './features/autocomplete';
 export { activate as activateColor } from './features/color';
 export { activate as activateDefinition } from './features/definition';

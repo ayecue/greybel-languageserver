@@ -10,19 +10,23 @@ import type {
 
 import {
   ConfigurationNamespace,
+  DefaultFileExtensions,
   IConfiguration,
+  IConfigurationRequest,
   IContext,
   IContextFeatures,
   IFileSystem,
   IndentationType,
-  LanguageId
+  LanguageId,
+  TypeAnalyzerStrategy
 } from './types';
 import { DocumentMerger } from './helper/document-merger';
 import { DocumentManager } from './helper/document-manager';
 import { semanticTokensLegend } from './helper/semantic-token-builder';
 
-function createConfig(preset?: IConfiguration): IConfiguration {
+function createConfig(preset?: IConfigurationRequest): IConfiguration {
   return {
+    fileExtensions: preset?.fileExtensions ? preset.fileExtensions.split(',') : DefaultFileExtensions,
     formatter: preset?.formatter ?? true,
     autocomplete: preset?.autocomplete ?? true,
     hoverdocs: preset?.hoverdocs ?? true,
@@ -34,6 +38,10 @@ function createConfig(preset?: IConfiguration): IConfiguration {
           preset?.transpiler?.beautify?.indentation ?? IndentationType.Tab,
         indentationSpaces: preset?.transpiler?.beautify?.indentationSpaces ?? 2
       }
+    },
+    typeAnalyzer: {
+      strategy: preset?.typeAnalyzer?.strategy ?? TypeAnalyzerStrategy.Dependency,
+      excludedPatterns: preset?.typeAnalyzer?.excludedPatterns ? preset.typeAnalyzer.excludedPatterns.split(',') : []
     }
   };
 }
@@ -67,9 +75,19 @@ export abstract class CoreContext extends EventEmitter implements IContext {
   }
 
   protected async syncConfiguraton() {
-    const configuration: IConfiguration =
+    const configuration: IConfigurationRequest =
       await this.connection.workspace.getConfiguration(ConfigurationNamespace);
-    this._configuration = createConfig(configuration);
+    const newConfiguration = createConfig(configuration);
+
+    // check for analyzer changes to clear type analyzer cache
+    const newTypeAnalyzerConfig = newConfiguration.typeAnalyzer;
+    const oldTypeAnalyzerConfig = this._configuration.typeAnalyzer;
+
+    if (newTypeAnalyzerConfig.strategy !== oldTypeAnalyzerConfig.strategy || newTypeAnalyzerConfig.excludedPatterns.join(',') !== oldTypeAnalyzerConfig.excludedPatterns.join(',')) {
+      this.documentMerger.flushCache();
+    }
+
+    this._configuration = newConfiguration;
   }
 
   protected configureCapabilties(capabilities: ClientCapabilities) {

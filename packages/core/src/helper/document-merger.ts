@@ -1,8 +1,9 @@
 import LRU from 'lru-cache';
 import { Document as TypeDocument } from 'miniscript-type-analyzer';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import toposort from 'toposort';
 
-import { IActiveDocument, IContext, IDocumentMerger } from '../types';
+import { IActiveDocument, IContext, IDocumentMerger, TypeAnalyzerStrategy } from '../types';
 import { hash } from './hash';
 import typeManager from './type-manager';
 
@@ -22,7 +23,7 @@ export class DocumentMerger implements IDocumentMerger {
     source: TextDocument,
     documents: IActiveDocument[]
   ): number {
-    let result = hash(`${source.uri}-${source.version}`);
+    let result = hash(`main-${source.uri}-${source.version}`);
 
     for (let index = 0; index < documents.length; index++) {
       const document = documents[index];
@@ -48,7 +49,11 @@ export class DocumentMerger implements IDocumentMerger {
     }
   }
 
-  private async process(
+  flushCache() {
+    this.results.clear();
+  }
+
+  private async processByDependencies(
     document: TextDocument,
     context: IContext,
     refs: Map<string, TypeDocument | null>
@@ -95,7 +100,7 @@ export class DocumentMerger implements IDocumentMerger {
           return;
         }
 
-        const itemTypeDoc = await this.process(textDocument, context, refs);
+        const itemTypeDoc = await this.processByDependencies(textDocument, context, refs);
 
         if (itemTypeDoc === null) return;
         externalTypeDocs.push(itemTypeDoc);
@@ -108,7 +113,7 @@ export class DocumentMerger implements IDocumentMerger {
     return mergedTypeDoc;
   }
 
-  async build(
+  private async buildByDependencies(
     document: TextDocument,
     context: IContext
   ): Promise<TypeDocument> {
@@ -150,7 +155,7 @@ export class DocumentMerger implements IDocumentMerger {
           return;
         }
 
-        const itemTypeDoc = await this.process(textDocument, context, refs);
+        const itemTypeDoc = await this.processByDependencies(textDocument, context, refs);
 
         if (itemTypeDoc === null) return;
         externalTypeDocs.push(itemTypeDoc);
@@ -160,5 +165,65 @@ export class DocumentMerger implements IDocumentMerger {
     const mergedTypeDoc = typeDoc.merge(...externalTypeDocs);
     this.results.set(cacheKey, mergedTypeDoc);
     return mergedTypeDoc;
+  }
+
+  private async buildByWorkspace(
+    document: TextDocument,
+    context: IContext
+  ): Promise<TypeDocument> {
+    const documentUri = document.uri;
+    const typeDoc = typeManager.get(documentUri);
+
+    if (!typeDoc) {
+      return null;
+    }
+
+    const externalTypeDocs: TypeDocument[] = [];
+    const config = context.getConfiguration();
+    const allFileUris = await context.fs.getWorkspaceFileUris(`**/*.{${config.fileExtensions.join(',')}}`, config.typeAnalyzer.excludedPatterns);
+    const allDocuments = await Promise.all(allFileUris.map(async (uri) => {
+      const textDocument = await context.documentManager.open(uri.toString());
+      return textDocument;
+    }));
+    const cacheKey = this.createCacheKey(document, allDocuments);
+
+    if (this.results.has(cacheKey)) {
+      return this.results.get(cacheKey);
+    }
+
+    this.registerCacheKey(cacheKey, documentUri);
+
+    // sort by it's usage
+    const documentGraph: [string, string][][] = await Promise.all(allDocuments.map(async (item) => {
+      if (documentUri === item.textDocument.uri) return [];
+      const depUris = await item.getDependencies();
+
+      return depUris.filter((depUri) => depUri !== documentUri).map((depUri) => {
+        return [item.textDocument.uri, depUri];
+      });
+    }));
+    const topoSorted = toposort(documentGraph.flat());
+
+    for (let index = topoSorted.length - 1; index >= 0; index--) {
+      const itemUri = topoSorted[index];
+      const itemTypeDoc = typeManager.get(itemUri);
+
+      if (itemTypeDoc === null) return;
+      externalTypeDocs.push(itemTypeDoc);
+    }
+
+    const mergedTypeDoc = typeDoc.merge(...externalTypeDocs);
+    this.results.set(cacheKey, mergedTypeDoc);
+    return mergedTypeDoc;
+  }
+
+  async build(
+    document: TextDocument,
+    context: IContext
+  ): Promise<TypeDocument> {
+    if (context.getConfiguration().typeAnalyzer.strategy === TypeAnalyzerStrategy.Workspace) {
+      return this.buildByWorkspace(document, context);
+    }
+    return this.buildByDependencies(document, context);
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "greybel-languageserver-core",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Core functionality of language server for GreyScript",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -48,6 +48,7 @@
     "@types/node": "^12.12.0",
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
+    "@types/toposort": "^2.0.7",
     "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
@@ -72,12 +73,13 @@
     "greyscript-core": ">=2.0.0",
     "greyscript-meta": ">=4.0.0",
     "greyscript-transpiler": ">=1.2.0",
-    "miniscript-type-analyzer": ">=0.13.2"
+    "miniscript-type-analyzer": ">=0.14.2"
   },
   "dependencies": {
     "color-convert": "^2.0.1",
     "lru-cache": "^7.18.3",
     "non-blocking-schedule": "^0.2.0",
+    "toposort": "^2.0.2",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.11",
     "vscode-uri": "^3.0.8"
