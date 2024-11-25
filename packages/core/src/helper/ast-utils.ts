@@ -9,15 +9,19 @@ import {
   ASTType
 } from 'miniscript-core';
 
-export const lookupRootScope = (origin: ASTBaseBlockWithScope): ASTBaseBlockWithScope => {
+export const lookupRootScope = (
+  origin: ASTBaseBlockWithScope
+): ASTBaseBlockWithScope => {
   let current = origin;
   while (current.scope) {
     current = current.scope;
   }
   return current;
-}
+};
 
-export const lookupScopes = (origin: ASTBaseBlockWithScope): ASTBaseBlockWithScope[] => {
+export const lookupScopes = (
+  origin: ASTBaseBlockWithScope
+): ASTBaseBlockWithScope[] => {
   if (!origin.scope) return [origin];
 
   const rootScope = lookupRootScope(origin);

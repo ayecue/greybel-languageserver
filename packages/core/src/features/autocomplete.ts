@@ -3,10 +3,7 @@ import {
   ASTIndexExpression,
   ASTMemberExpression
 } from 'miniscript-core';
-import {
-  CompletionItem as EntityCompletionItem,
-  IEntity
-} from 'miniscript-type-analyzer';
+import { IEntity } from 'miniscript-type-analyzer';
 import type {
   CompletionItem,
   TextDocumentPositionParams
@@ -61,7 +58,6 @@ export function activate(context: IContext) {
       const helper = new LookupHelper(activeDocument.textDocument, context);
       const astResult = helper.lookupAST(params.position);
       const completionListBuilder = new CompletionListBuilder();
-      let isProperty = false;
 
       if (astResult) {
         const { closest } = astResult;
@@ -70,12 +66,10 @@ export function activate(context: IContext) {
           completionListBuilder.addCollection(
             await getPropertyCompletionList(helper, closest)
           );
-          isProperty = true;
         } else if (closest instanceof ASTIndexExpression) {
           completionListBuilder.addCollection(
             await getPropertyCompletionList(helper, closest)
           );
-          isProperty = true;
         } else {
           completionListBuilder.setDefault(getDefaultCompletionList());
           completionListBuilder.addCollection(
