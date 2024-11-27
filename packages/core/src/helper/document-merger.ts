@@ -197,12 +197,9 @@ export class DocumentMerger implements IDocumentMerger {
       `**/*.{${config.fileExtensions.join(',')}}`,
       config.typeAnalyzer.excludedPatterns
     );
-    const allFilePaths = allFileUris
-      .map((item) => item.toString())
-      .filter((itemUri) => documentUri !== itemUri);
     const allDocuments = await Promise.all(
-      allFilePaths.map(async (uri) => {
-        const textDocument = await context.documentManager.open(uri);
+      allFileUris.map(async (uri) => {
+        const textDocument = await context.documentManager.open(uri.toString());
         return textDocument;
       })
     );
@@ -217,20 +214,18 @@ export class DocumentMerger implements IDocumentMerger {
     // sort by it's usage
     const documentGraph: [string, string][][] = await Promise.all(
       allDocuments.map(async (item) => {
-        if (documentUri === item.textDocument.uri) return [];
         const depUris = await item.getDependencies();
 
-        return depUris
-          .filter((depUri) => depUri !== documentUri)
-          .map((depUri) => {
-            return [item.textDocument.uri, depUri];
-          });
+        return depUris.map((depUri) => {
+          return [item.textDocument.uri, depUri];
+        });
       })
     );
     const topoSorted = toposort(documentGraph.flat());
 
     for (let index = topoSorted.length - 1; index >= 0; index--) {
       const itemUri = topoSorted[index];
+      if (itemUri === documentUri) continue;
       const itemTypeDoc = typeManager.get(itemUri);
 
       if (itemTypeDoc === null) return;

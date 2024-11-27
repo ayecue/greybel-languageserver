@@ -73,7 +73,7 @@
     "greyscript-core": ">=2.0.0",
     "greyscript-meta": ">=4.0.0",
     "greyscript-transpiler": ">=1.2.0",
-    "miniscript-type-analyzer": ">=0.14.2"
+    "miniscript-type-analyzer": ">=0.14.7"
   },
   "dependencies": {
     "color-convert": "^2.0.1",
