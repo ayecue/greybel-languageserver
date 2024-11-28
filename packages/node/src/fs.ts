@@ -3,6 +3,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import EventEmitter from "events";
 import { URI } from "vscode-uri";
 import fs from "fs";
+import { glob } from 'glob';
 
 import { IContext, IFileSystem, LanguageId } from "greybel-languageserver-core";
 import LRUCache from "lru-cache";
@@ -37,6 +38,14 @@ export class FileSystem extends EventEmitter implements IFileSystem {
   async getWorkspaceFolderUri(source: URI): Promise<URI | null> {
     const uris = await this.getWorkspaceFolderUris();
     return uris.find(folderUri => source.path.startsWith(folderUri.path)) || null;
+  }
+
+  async getWorkspaceFileUris(pattern: string, exclude?: string): Promise<URI[]> {
+    const folderUris = await this.getWorkspaceFolderUris();
+    const filePaths: string[][] = await Promise.all(folderUris.flatMap(async (folderUri) => {
+      return glob(pattern, { cwd: folderUri.fsPath, absolute: true, ignore: exclude });
+    }));
+    return filePaths.flat().map((it) => URI.file(it));
   }
 
   async findExistingPath(...uris: string[]): Promise<string | null> {

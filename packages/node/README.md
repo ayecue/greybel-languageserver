@@ -38,6 +38,28 @@ npm install -g greybel-languageserver
 greybel-languageserver
 ```
 
+## Configuration
+```ts
+{
+  fileExtensions: string; // default: "gs,ms,src"
+  formatter: boolean; // default: true
+  autocomplete: boolean; // default: true
+  hoverdocs: boolean; // default: true
+  diagnostic: boolean; // default: true
+  transpiler: {
+    beautify: {
+      keepParentheses: boolean; // default: true
+      indentation: "Tab" | "Whitespace"; // default: "Tab"
+      indentationSpaces: number; // default: 2
+    };
+  };
+  typeAnalyzer: {
+    strategy: "Dependency" | "Workspace"; // default: "Dependency"
+    exclude?: string; // default: undefined
+  };
+}
+```
+
 ## Example Implementations
 
 This section provides a collection of IDEs that implement the `greybel-languageserver`.
