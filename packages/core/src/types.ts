@@ -42,7 +42,7 @@ export interface IConfigurationRequest {
   };
   typeAnalyzer: {
     strategy: TypeAnalyzerStrategy;
-    excludedPatterns: string;
+    exclude: string;
   };
 }
 
@@ -61,7 +61,7 @@ export interface IConfiguration {
   };
   typeAnalyzer: {
     strategy: TypeAnalyzerStrategy;
-    excludedPatterns: string[];
+    exclude: string;
   };
 }
 
@@ -116,7 +116,7 @@ export interface IContext extends EventEmitter {
 export interface IFileSystem extends EventEmitter {
   getWorkspaceFolderUris(): Promise<URI[]>;
   getWorkspaceFolderUri(source: URI): Promise<URI | null>;
-  getWorkspaceFileUris(pattern: string, excludedPatterns?: string[]): Promise<URI[]>;
+  getWorkspaceFileUris(pattern: string, exclude?: string): Promise<URI[]>;
   getAllTextDocuments(): TextDocument[];
   findExistingPath(...uris: string[]): Promise<string | null>;
   fetchTextDocument(targetUri: string): Promise<TextDocument | null>;

@@ -41,7 +41,7 @@ function createConfig(preset?: IConfigurationRequest): IConfiguration {
     },
     typeAnalyzer: {
       strategy: preset?.typeAnalyzer?.strategy ?? TypeAnalyzerStrategy.Dependency,
-      excludedPatterns: preset?.typeAnalyzer?.excludedPatterns ? preset.typeAnalyzer.excludedPatterns.split(',') : []
+      exclude: preset?.typeAnalyzer?.exclude ?? undefined
     }
   };
 }
@@ -83,7 +83,7 @@ export abstract class CoreContext extends EventEmitter implements IContext {
     const newTypeAnalyzerConfig = newConfiguration.typeAnalyzer;
     const oldTypeAnalyzerConfig = this._configuration.typeAnalyzer;
 
-    if (newTypeAnalyzerConfig.strategy !== oldTypeAnalyzerConfig.strategy || newTypeAnalyzerConfig.excludedPatterns.join(',') !== oldTypeAnalyzerConfig.excludedPatterns.join(',')) {
+    if (newTypeAnalyzerConfig.strategy !== oldTypeAnalyzerConfig.strategy || newTypeAnalyzerConfig.exclude !== oldTypeAnalyzerConfig.exclude) {
       this.documentMerger.flushCache();
     }
 
