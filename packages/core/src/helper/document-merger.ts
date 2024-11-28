@@ -193,10 +193,7 @@ export class DocumentMerger implements IDocumentMerger {
 
     const externalTypeDocs: TypeDocument[] = [];
     const config = context.getConfiguration();
-    const allFileUris = await context.fs.getWorkspaceFileUris(
-      `**/*.{${config.fileExtensions.join(',')}}`,
-      config.typeAnalyzer.exclude
-    );
+    const allFileUris = await context.fs.getWorkspaceRelatedFiles();
     const allDocuments = await Promise.all(
       allFileUris.map(async (uri) => {
         const textDocument = await context.documentManager.open(uri.toString());

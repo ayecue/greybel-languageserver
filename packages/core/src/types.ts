@@ -116,7 +116,7 @@ export interface IContext extends EventEmitter {
 export interface IFileSystem extends EventEmitter {
   getWorkspaceFolderUris(): Promise<URI[]>;
   getWorkspaceFolderUri(source: URI): Promise<URI | null>;
-  getWorkspaceFileUris(pattern: string, exclude?: string): Promise<URI[]>;
+  getWorkspaceRelatedFiles(): Promise<URI[]>;
   getAllTextDocuments(): TextDocument[];
   findExistingPath(...uris: string[]): Promise<string | null>;
   fetchTextDocument(targetUri: string): Promise<TextDocument | null>;
