@@ -53,6 +53,14 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     }
   }
 
+  async getWorkspaceRelatedFiles(): Promise<URI[]> {
+    const configuration = this._context.getConfiguration();
+    const fileExtensions = configuration.fileExtensions;
+    const exclude = configuration.typeAnalyzer.exclude;
+    const filePaths = await this.requestFindFiles(`**/*.${fileExtensions.join(',')}`, exclude);
+    return filePaths.map((it) => URI.parse(it));
+  }
+
   async getWorkspaceFileUris(pattern: string, exclude?: string): Promise<URI[]> {
     const filePaths = await this.requestFindFiles(pattern, exclude);
     return filePaths.map((it) => URI.parse(it));
