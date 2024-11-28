@@ -57,7 +57,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     const configuration = this._context.getConfiguration();
     const fileExtensions = configuration.fileExtensions;
     const exclude = configuration.typeAnalyzer.exclude;
-    const filePaths = await this.requestFindFiles(`**/*.${fileExtensions.join(',')}`, exclude);
+    const filePaths = await this.requestFindFiles(`**/*.{${fileExtensions.join(',')}}`, exclude);
     return filePaths.map((it) => URI.parse(it));
   }
 
