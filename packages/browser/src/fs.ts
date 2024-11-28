@@ -7,7 +7,8 @@ import LRUCache from "lru-cache";
 import { IContext, IFileSystem, LanguageId } from "greybel-languageserver-core";
 
 export enum FileSystemRequest {
-  FileContent = 'read-file'
+  FileContent = 'read-file',
+  FindFiles = 'find-files'
 }
 
 export class FileSystem extends EventEmitter implements IFileSystem {
@@ -41,6 +42,22 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     return uris.find(folderUri => source.path.startsWith(folderUri.path)) || null;
   }
 
+  private async requestFindFiles(include: string, exclude?: string): Promise<string[]> {
+    const method = `custom/${FileSystemRequest.FindFiles}`;
+
+    try {
+      return await this._context.connection.sendRequest(method, JSON.stringify({ include, exclude }));
+    } catch (err) {
+      console.error(`Cannot fetch workspace files! Maybe the client does not support ${method}`, err);
+      return [];
+    }
+  }
+
+  async getWorkspaceFileUris(pattern: string, exclude?: string): Promise<URI[]> {
+    const filePaths = await this.requestFindFiles(pattern, exclude);
+    return filePaths.map((it) => URI.parse(it));
+  }
+
   async findExistingPath(...uris: string[]): Promise<string | null> {
     if (uris.length === 0) {
       return null;
@@ -62,7 +79,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     const method = `custom/${FileSystemRequest.FileContent}`;
 
     try {
-      return await this._context.connection.sendRequest(method, fileUri.toString());
+      return await this._context.connection.sendRequest(method, JSON.stringify({ uri: fileUri.toString() }));
     } catch (err) {
       console.error(`Cannot fetch text document! Maybe the client does not support ${method}`, err);
       return null;
