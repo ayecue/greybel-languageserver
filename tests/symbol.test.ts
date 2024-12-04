@@ -29,7 +29,7 @@ suite('DocumentSymbolProvider', () => {
       const documentUri = getDocUri('class.src');
       const result = await executeDocumentSymbolProvider(documentUri);
 
-      assert.strictEqual(result.length, 106);
+      assert.strictEqual(result.length, 93);
     });
   });
 
