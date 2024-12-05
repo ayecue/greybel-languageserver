@@ -1,7 +1,10 @@
 import { CompletionItemKind as EntityCompletionItemKind } from 'miniscript-type-analyzer';
 import type { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
 
-const CompletionItemKindMapping: Record<EntityCompletionItemKind, CompletionItemKind> = {
+const CompletionItemKindMapping: Record<
+  EntityCompletionItemKind,
+  CompletionItemKind
+> = {
   [EntityCompletionItemKind.Constant]: 21, // CompletionItemKind.Constant
   [EntityCompletionItemKind.Internal]: 21, // CompletionItemKind.Constant
   [EntityCompletionItemKind.InternalFunction]: 21, // CompletionItemKind.Constant

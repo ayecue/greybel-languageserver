@@ -3,7 +3,7 @@ import {
   SignatureDefinitionFunctionArg,
   SignatureDefinitionTypeMeta
 } from 'meta-utils';
-import { IEntity } from 'miniscript-type-analyzer';
+import { CompletionItemKind, IEntity } from 'miniscript-type-analyzer';
 import type {
   Hover,
   ParameterInformation,
@@ -12,6 +12,25 @@ import type {
 
 import { LanguageId } from '../types';
 import { MarkdownString } from './markdown-string';
+
+const CompletionItemKindMapping: Record<CompletionItemKind, string> = {
+  [CompletionItemKind.Constant]: 'constant',
+  [CompletionItemKind.Expression]: 'expr',
+  [CompletionItemKind.Function]: 'function',
+  [CompletionItemKind.Internal]: 'internal',
+  [CompletionItemKind.InternalFunction]: 'function',
+  [CompletionItemKind.InternalProperty]: 'var',
+  [CompletionItemKind.ListConstructor]: 'list',
+  [CompletionItemKind.Literal]: 'literal',
+  [CompletionItemKind.MapConstructor]: 'map',
+  [CompletionItemKind.Property]: 'var',
+  [CompletionItemKind.Unknown]: 'unknown',
+  [CompletionItemKind.Variable]: 'var'
+};
+
+export function formatKind(kind: CompletionItemKind): string {
+  return CompletionItemKindMapping[kind] || 'unknown';
+}
 
 export function formatTypes(types: SignatureDefinitionTypeMeta[]): string {
   if (types == null) return '';
@@ -33,7 +52,7 @@ export const createTooltipHeader = (
   const returnValues = formatTypes(definition.getReturns()) || 'null';
 
   if (args.length === 0) {
-    return `(${item.kind}) ${item.label} (): ${returnValues}`;
+    return `(${formatKind(item.kind)}) ${item.label} (): ${returnValues}`;
   }
 
   const argValues = args
@@ -49,7 +68,7 @@ export const createTooltipHeader = (
     )
     .join(', ');
 
-  return `(${item.kind}) ${item.label} (${argValues}): ${returnValues}`;
+  return `(${formatKind(item.kind)}) ${item.label} (${argValues}): ${returnValues}`;
 };
 
 export const appendTooltipHeader = (

@@ -14,7 +14,7 @@ import { URI, Utils } from 'vscode-uri';
 
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { MarkdownString } from '../helper/markdown-string';
-import { createHover, formatTypes } from '../helper/tooltip';
+import { createHover, formatKind, formatTypes } from '../helper/tooltip';
 import { IContext, LanguageId } from '../types';
 
 const getRootDirectory = async (
@@ -144,7 +144,7 @@ export function activate(context: IContext) {
     const metaTypes = Array.from(entity.types).map(
       SignatureDefinitionTypeMeta.parse
     );
-    let label = `(${entity.kind}) ${entity.label}: ${formatTypes(metaTypes)}`;
+    let label = `(${formatKind(entity.kind)}) ${entity.label}: ${formatTypes(metaTypes)}`;
 
     if (entity.types.has(SignatureDefinitionBaseType.Map)) {
       const records: Record<string, string> = {};
