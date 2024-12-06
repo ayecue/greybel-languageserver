@@ -28,7 +28,7 @@ const findAllAssignments = (
       continue;
     }
 
-    const label = entity?.label ?? createExpressionId(assignment.variable);
+    const label = createExpressionId(assignment.variable);
     const kind = entity?.kind ? getSymbolItemKind(entity.kind) : 13; // SymbolKind.Variable
 
     const start = {
@@ -42,7 +42,6 @@ const findAllAssignments = (
 
     result.push({
       name: label,
-      containerName: label,
       kind,
       location: {
         uri: document.uri,
