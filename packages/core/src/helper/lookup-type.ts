@@ -99,7 +99,7 @@ export class LookupHelper {
       return new Map();
     }
 
-    return typeDoc.getRootScopeContext().scope.getAllIdentifier();
+    return typeDoc.getRootScopeContext().scope.getAvailableIdentifier();
   }
 
   async findAllAvailableIdentifier(
@@ -117,7 +117,7 @@ export class LookupHelper {
       return new Map();
     }
 
-    return context.scope.getAllIdentifier();
+    return context.scope.getAvailableIdentifier();
   }
 
   async findAllAvailableIdentifierRelatedToPosition(
@@ -130,7 +130,7 @@ export class LookupHelper {
       return result;
     }
 
-    for (const assignment of typeDoc.container.getAllIdentifier(
+    for (const assignment of typeDoc.container.getAvailableIdentifier(
       SignatureDefinitionBaseType.General
     )) {
       result.set(...assignment);

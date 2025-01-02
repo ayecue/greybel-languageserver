@@ -65,6 +65,42 @@ export interface IConfiguration {
   };
 }
 
+export enum DependencyType {
+  Include = 'include',
+  Import = 'import',
+  NativeImport = 'native-import'
+}
+
+/**
+ * Pattern: import:myVariable!./path/to/file.gs
+ */
+export type DependencyRawLocation = string;
+
+export interface IDependencyLocation {
+  type: DependencyType;
+  location: string;
+  args?: string[];
+}
+
+export function parseDependencyLocation(
+  location: IDependencyLocation
+): DependencyRawLocation {
+  if (location.args && location.args.length > 0) {
+    return `${location.type}:${location.args.join(':')}!${location.location}`;
+  }
+
+  return `${location.type}!${location.location}`;
+}
+
+export function parseDependencyRawLocation(
+  rawLocation: DependencyRawLocation
+): IDependencyLocation {
+  const typeIndex = rawLocation.indexOf('!');
+  const [type, ...args] = rawLocation.substring(0, typeIndex).split(':');
+  const location = rawLocation.substring(typeIndex + 1);
+  return { type: type as DependencyType, location, args };
+}
+
 export interface IActiveDocument {
   documentManager: IDocumentManager;
   content: string;
@@ -73,8 +109,16 @@ export interface IActiveDocument {
   errors: Error[];
 
   getDirectory(): URI;
-  getDependencies(): Promise<string[]>;
-  getImports(nested?: boolean): Promise<IActiveDocument[]>
+  getDependencies(): Promise<IDependencyLocation[]>;
+  getIncludeUris(): Promise<DependencyRawLocation[]>;
+  getImportUris(): Promise<DependencyRawLocation[]>;
+  getNativeImportUris(): Promise<DependencyRawLocation[]>;
+  getImports(nested?: boolean): Promise<IActiveDocumentImport[]>
+}
+
+export interface IActiveDocumentImport {
+  document: IActiveDocument;
+  location: IDependencyLocation;
 }
 
 export interface IDocumentManager extends EventEmitter {

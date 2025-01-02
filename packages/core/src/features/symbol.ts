@@ -1,5 +1,13 @@
-import { ASTAssignmentStatement, ASTType } from 'miniscript-core';
-import { createExpressionId } from 'miniscript-type-analyzer';
+import {
+  ASTAssignmentStatement,
+  ASTForGenericStatement,
+  ASTType
+} from 'miniscript-core';
+import {
+  ASTDefinitionItem,
+  createExpressionId,
+  Document as MSDocument
+} from 'miniscript-type-analyzer';
 import type {
   DocumentSymbolParams,
   SymbolInformation,
@@ -11,43 +19,68 @@ import { getSymbolItemKind } from '../helper/kind';
 import typeManager from '../helper/type-manager';
 import { IContext } from '../types';
 
+const handleItem = (
+  document: TextDocument,
+  typeDoc: MSDocument,
+  item: ASTAssignmentStatement | ASTForGenericStatement
+): SymbolInformation | null => {
+  const entity = typeDoc.resolveNamespace(item.variable, true);
+
+  if (entity == null) {
+    return null;
+  }
+
+  const label = createExpressionId(item.variable);
+  const kind = entity?.kind ? getSymbolItemKind(entity.kind) : 13; // SymbolKind.Variable
+
+  const start = {
+    line: item.variable.start.line - 1,
+    character: item.variable.start.character - 1
+  };
+  const end = {
+    line: item.variable.end.line - 1,
+    character: item.variable.end.character - 1
+  };
+
+  return {
+    name: label,
+    kind,
+    location: {
+      uri: document.uri,
+      range: { start, end }
+    }
+  };
+};
+
+const handleDefinitionItem = (
+  document: TextDocument,
+  typeDoc: MSDocument,
+  item: ASTDefinitionItem
+): SymbolInformation | null => {
+  switch (item.node.type) {
+    case ASTType.AssignmentStatement:
+      return handleItem(document, typeDoc, item.node as ASTAssignmentStatement);
+    case ASTType.ForGenericStatement:
+      return handleItem(document, typeDoc, item.node as ASTForGenericStatement);
+    default:
+      return null;
+  }
+};
+
 const findAllAssignments = (
   document: TextDocument,
   query: string
 ): SymbolInformation[] => {
   const typeDoc = typeManager.get(document.uri);
-  const assignments = typeDoc.resolveAllAssignmentsWithQuery(query);
+  const defs = typeDoc.resolveAllAssignmentsWithQuery(query);
   const result: SymbolInformation[] = [];
 
-  for (const assignmentItem of assignments) {
-    if (assignmentItem.node.type !== ASTType.AssignmentStatement) continue;
-    const assignment = assignmentItem.node as ASTAssignmentStatement;
-    const entity = typeDoc.resolveNamespace(assignment.variable, true);
+  for (const defItem of defs) {
+    const symbol = handleDefinitionItem(document, typeDoc, defItem);
 
-    if (entity == null) {
-      continue;
+    if (symbol != null) {
+      result.push(symbol);
     }
-
-    const label = createExpressionId(assignment.variable);
-    const kind = entity?.kind ? getSymbolItemKind(entity.kind) : 13; // SymbolKind.Variable
-
-    const start = {
-      line: assignment.variable.start.line - 1,
-      character: assignment.variable.start.character - 1
-    };
-    const end = {
-      line: assignment.variable.end.line - 1,
-      character: assignment.variable.end.character - 1
-    };
-
-    result.push({
-      name: label,
-      kind,
-      location: {
-        uri: document.uri,
-        range: { start, end }
-      }
-    });
   }
 
   return result;

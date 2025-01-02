@@ -19,14 +19,14 @@ import { AVAILABLE_OPERATORS } from './autocomplete/operators';
 export const getPropertyCompletionList = async (
   helper: LookupHelper,
   item: ASTBase
-): Promise<ReturnType<IEntity['getAllIdentifier']>> => {
+): Promise<ReturnType<IEntity['getAvailableIdentifier']>> => {
   const entity = await helper.lookupBasePath(item);
 
   if (entity === null) {
     return null;
   }
 
-  return entity.getAllIdentifier();
+  return entity.getAvailableIdentifier();
 };
 
 export const getDefaultCompletionList = (): CompletionItem[] => {

@@ -1,8 +1,11 @@
 import {
   ASTBase,
   ASTBaseBlockWithScope,
-  ASTMemberExpression
+  ASTForGenericStatement,
+  ASTMemberExpression,
+  ASTType
 } from 'miniscript-core';
+import { ASTDefinitionItem } from 'miniscript-type-analyzer';
 import type {
   DefinitionParams,
   Location,
@@ -14,6 +17,42 @@ import { IContext } from '../types';
 
 const definitionLinkToString = (link: Location): string => {
   return `${link.uri}:${link.range.start.line}:${link.range.start.character}-${link.range.end.line}:${link.range.end.character}`;
+};
+
+const getLocation = (item: ASTDefinitionItem): Location => {
+  const node = item.node;
+  let start: Position;
+  let end: Position;
+
+  switch (node.type) {
+    case ASTType.ForGenericStatement: {
+      const stmt = node as ASTForGenericStatement;
+      start = {
+        line: stmt.variable.start.line - 1,
+        character: stmt.variable.start.character - 1
+      };
+      end = {
+        line: stmt.variable.end.line - 1,
+        character: stmt.variable.end.character - 1
+      };
+      break;
+    }
+    default: {
+      start = {
+        line: node.start.line - 1,
+        character: node.start.character - 1
+      };
+      end = {
+        line: node.end.line - 1,
+        character: node.end.character - 1
+      };
+    }
+  }
+
+  return {
+    uri: item.source,
+    range: { start, end }
+  };
 };
 
 const findAllDefinitions = async (
@@ -32,18 +71,7 @@ const findAllDefinitions = async (
       continue;
     }
 
-    const start: Position = {
-      line: node.start.line - 1,
-      character: node.start.character - 1
-    };
-    const end: Position = {
-      line: node.end.line - 1,
-      character: node.end.character - 1
-    };
-    const definitionLink: Location = {
-      uri: assignment.source,
-      range: { start, end }
-    };
+    const definitionLink: Location = getLocation(assignment);
     const linkString = definitionLinkToString(definitionLink);
 
     if (visited.has(linkString)) {
