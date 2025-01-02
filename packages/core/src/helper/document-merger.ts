@@ -135,11 +135,6 @@ export class DocumentMerger implements IDocumentMerger {
       return null;
     }
 
-    const externalTypeDocs: TypeDocument[] = [];
-    const importsWithNamespace: {
-      namespace: string;
-      typeDoc: TypeDocument;
-    }[] = [];
     const allImports = await context.documentManager.get(document).getImports();
     const cacheKey = this.createCacheKey(
       document,
@@ -149,6 +144,12 @@ export class DocumentMerger implements IDocumentMerger {
     if (this.results.has(cacheKey)) {
       return this.results.get(cacheKey);
     }
+
+    const externalTypeDocs: TypeDocument[] = [];
+    const importsWithNamespace: {
+      namespace: string;
+      typeDoc: TypeDocument;
+    }[] = [];
 
     this.registerCacheKey(cacheKey, documentUri);
 
