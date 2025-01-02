@@ -1,18 +1,19 @@
-import { NodeContext } from './context';
 import {
   activateAutocomplete,
   activateColor,
   activateDefinition,
   activateDiagnostic,
+  activateFoldingRange,
   activateFormatter,
   activateHover,
+  activateSemantic,
   activateSignature,
   activateSubscriptions,
   activateSymbol,
-  activateSemantic,
-  activateFoldingRange,
   IContext
 } from 'greybel-languageserver-core';
+
+import { NodeContext } from './context';
 
 const context = new NodeContext();
 

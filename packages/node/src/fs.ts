@@ -1,12 +1,15 @@
-import { createConnection, TextDocumentChangeEvent, TextDocuments } from "vscode-languageserver/node";
-import { TextDocument } from "vscode-languageserver-textdocument";
-import EventEmitter from "events";
-import { URI } from "vscode-uri";
-import fs from "fs";
+import EventEmitter from 'events';
+import fs from 'fs';
 import { glob } from 'glob';
-
-import { IContext, IFileSystem, LanguageId } from "greybel-languageserver-core";
-import LRUCache from "lru-cache";
+import { IContext, IFileSystem, LanguageId } from 'greybel-languageserver-core';
+import LRUCache from 'lru-cache';
+import {
+  createConnection,
+  TextDocumentChangeEvent,
+  TextDocuments
+} from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { URI } from 'vscode-uri';
 
 export class FileSystem extends EventEmitter implements IFileSystem {
   private _context: IContext;
@@ -18,9 +21,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     super();
 
     this._context = context;
-    this._textDocumentManager = new TextDocuments(
-      TextDocument
-    );
+    this._textDocumentManager = new TextDocuments(TextDocument);
     this._tempTextDocumentCache = new LRUCache({
       ttl: 1000,
       max: 100
@@ -32,12 +33,16 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     if (this._workspace == null) return [];
     const result = await this._workspace.getWorkspaceFolders();
     if (result == null) return [];
-    return Array.from(new Set(result.map((it) => it.uri))).map((it) => URI.parse(it));
+    return Array.from(new Set(result.map((it) => it.uri))).map((it) =>
+      URI.parse(it)
+    );
   }
 
   async getWorkspaceFolderUri(source: URI): Promise<URI | null> {
     const uris = await this.getWorkspaceFolderUris();
-    return uris.find(folderUri => source.path.startsWith(folderUri.path)) || null;
+    return (
+      uris.find((folderUri) => source.path.startsWith(folderUri.path)) || null
+    );
   }
 
   async getWorkspaceRelatedFiles(): Promise<URI[]> {
@@ -45,11 +50,16 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     const fileExtensions = configuration.fileExtensions;
     const exclude = configuration.typeAnalyzer.exclude;
     const folderUris = await this.getWorkspaceFolderUris();
-    const filePaths: string[][] = await Promise.all(folderUris.flatMap(async (folderUri) => {
-      return glob(fileExtensions.map((ext) => {
-        return `**/*.${ext}`;
-      }), { cwd: folderUri.fsPath, absolute: true, ignore: exclude });
-    }));
+    const filePaths: string[][] = await Promise.all(
+      folderUris.flatMap(async (folderUri) => {
+        return glob(
+          fileExtensions.map((ext) => {
+            return `**/*.${ext}`;
+          }),
+          { cwd: folderUri.fsPath, absolute: true, ignore: exclude }
+        );
+      })
+    );
     return filePaths.flat().map((it) => URI.file(it));
   }
 
@@ -59,7 +69,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     }
 
     for (let index = 0; index < uris.length; index++) {
-      const item = await this.getTextDocument(uris[index])
+      const item = await this.getTextDocument(uris[index]);
       if (item != null) return uris[index];
     }
 
@@ -81,10 +91,11 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     let tempDoc: TextDocument | null = null;
 
     try {
-      const content = await fs.promises.readFile(uri.fsPath, { encoding: 'utf-8' });
+      const content = await fs.promises.readFile(uri.fsPath, {
+        encoding: 'utf-8'
+      });
       tempDoc = TextDocument.create(targetUri, LanguageId, 0, content);
-    } catch (err) {
-    }
+    } catch (err) {}
 
     this._tempTextDocumentCache.set(targetUri, tempDoc);
 
