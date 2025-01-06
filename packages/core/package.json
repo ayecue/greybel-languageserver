@@ -1,6 +1,6 @@
 {
   "name": "greybel-languageserver-core",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "description": "Core functionality of language server for GreyScript",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -70,10 +70,10 @@
     "vscode-languageclient": "^9.0.1"
   },
   "peerDependencies": {
-    "greyscript-core": ">=2.4.0",
+    "greyscript-core": ">=2.5.0",
     "greyscript-meta": ">=4.2.0",
-    "greyscript-transpiler": ">=1.5.0",
-    "miniscript-type-analyzer": ">=0.19.5"
+    "greyscript-transpiler": ">=1.6.0",
+    "miniscript-type-analyzer": ">=0.20.0"
   },
   "dependencies": {
     "color-convert": "^2.0.1",
