@@ -1,6 +1,6 @@
 {
   "name": "greybel-languageserver",
-  "version": "1.12.5",
+  "version": "1.12.6",
   "description": "Language server for GreyScript",
   "main": "./index.js",
   "scripts": {
@@ -75,9 +75,9 @@
   "dependencies": {
     "glob": "^11.0.0",
     "greybel-languageserver-core": "~1.8.0",
-    "greyscript-core": "~2.5.1",
+    "greyscript-core": "~2.5.2",
     "greyscript-meta": "~4.2.2",
-    "greyscript-transpiler": "~1.6.2",
-    "miniscript-type-analyzer": "~0.20.3"
+    "greyscript-transpiler": "~1.6.3",
+    "miniscript-type-analyzer": "~0.20.4"
   }
 }
