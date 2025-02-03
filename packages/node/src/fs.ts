@@ -95,7 +95,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
         encoding: 'utf-8'
       });
       tempDoc = TextDocument.create(targetUri, LanguageId, 0, content);
-    } catch (err) {}
+    } catch (err) { }
 
     this._tempTextDocumentCache.set(targetUri, tempDoc);
 

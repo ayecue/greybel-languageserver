@@ -186,7 +186,7 @@ lua <<EOF
     configs.greybel = {
       default_config = {
         cmd = { "greybel-languageserver", "--stdio" },
-        filetypes = { "src" },
+        filetypes = { "greyscript" },
         root_dir = lspconfig.util.root_pattern(".git", vim.fn.getcwd()),
         settings = {},
         on_attach = function(client, bufnr)           -- Optional on_attach function
@@ -201,7 +201,7 @@ lua <<EOF
   lspconfig.greybel.setup{}
 EOF
 
-autocmd BufRead,BufNewFile *.src set filetype=src
+autocmd BufRead,BufNewFile *.src set filetype=greyscript
 ```
 2. Don't forget to run :PlugInstall to install the necessary plugins.
 
