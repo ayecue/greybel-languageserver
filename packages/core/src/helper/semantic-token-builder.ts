@@ -1178,7 +1178,6 @@ class TokenHandler {
 
   private processAssignment() {
     const me = this;
-    const startToken = me.token;
 
     me.processExpr(true, true);
 
@@ -1550,14 +1549,16 @@ class TokenHandler {
 
   process() {
     const me = this;
+    let lastToken = null;
+
+    me.next();
 
     while (!Selectors.EndOfFile(me.token)) {
-      me.next();
-
-      if (me.token.type === TokenType.Invalid) {
-        continue;
+      if (lastToken === me.token) {
+        me.next();
       }
 
+      lastToken = me.token;
       me.skipNewlines();
 
       if (Selectors.EndOfFile(me.token)) break;
