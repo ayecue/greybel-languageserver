@@ -167,17 +167,45 @@ class TokenHandler {
     return null;
   }
 
+  private processMultilineToken(token: Token, lines: string[], type: SemanticTokenType) {
+    if (lines.length > 1) {
+      this._builder.push(
+        token.start.line - 1,
+        token.start.character - 1,
+        lines[0].length,
+        type,
+        0
+      );
+
+      for (let offset = 1; offset < lines.length; offset++) {
+        this._builder.push(
+          (token.start.line + offset) - 1,
+          0,
+          lines[offset].length,
+          type,
+          0
+        );
+      }
+    } else {
+      this._builder.push(
+        token.start.line - 1,
+        token.start.character - 1,
+        lines[0].length,
+        type,
+        0
+      );
+    }
+  }
+
   private skipNewlines() {
     const me = this;
     while (true) {
       if (Selectors.Comment(me.token)) {
-        this._builder.push(
-          me.token.start.line - 1,
-          me.token.start.character - 1,
-          me.token.value.length + 2,
-          SemanticTokenType.Comment,
-          0
-        );
+        if (me.token.lastLine != null) {
+          me.processMultilineToken(me.token, `/*${me.token.value}*/`.split('\n'), SemanticTokenType.Comment);
+        } else {
+          me.processMultilineToken(me.token, `//${me.token.value}`.split('\n'), SemanticTokenType.Comment);
+        }
       } else if (!Selectors.EndOfLine(me.token)) {
         break;
       }
@@ -237,13 +265,7 @@ class TokenHandler {
 
     switch (token.type) {
       case TokenType.StringLiteral: {
-        this._builder.push(
-          token.start.line - 1,
-          token.start.character - 1,
-          token.raw.length,
-          SemanticTokenType.String,
-          0
-        );
+        this.processMultilineToken(token as Token, token.raw.split('\n'), SemanticTokenType.String);
         break;
       }
       case TokenType.NumericLiteral: {
