@@ -14,7 +14,7 @@ export function activate(context: IContext) {
         return;
       }
 
-      const parseResult = context.documentManager.get(document);
+      const parseResult = await context.documentManager.getLatest(document);
 
       if (!parseResult.document) {
         return;

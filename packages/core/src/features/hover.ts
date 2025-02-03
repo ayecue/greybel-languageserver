@@ -52,15 +52,15 @@ export function activate(context: IContext) {
       target == null
         ? ['Cannot open file.']
         : [
-            `[Imports file "${path.basename(
-              target
-            )}" inside this code](${target})`,
-            '***',
-            'Click the link above to open the file.',
-            '',
-            'Use the build command to create an installer',
-            'file which will bundle all dependencies.'
-          ];
+          `[Imports file "${path.basename(
+            target
+          )}" inside this code](${target})`,
+          '***',
+          'Click the link above to open the file.',
+          '',
+          'Use the build command to create an installer',
+          'file which will bundle all dependencies.'
+        ];
 
     hoverText.appendMarkdown(output.join('\n'));
 
@@ -89,12 +89,12 @@ export function activate(context: IContext) {
       target == null
         ? ['Cannot open file.']
         : [
-            `[Inserts file "${path.basename(
-              target
-            )}" inside this code when building](${target})`,
-            '***',
-            'Click the link above to open the file.'
-          ];
+          `[Inserts file "${path.basename(
+            target
+          )}" inside this code when building](${target})`,
+          '***',
+          'Click the link above to open the file.'
+        ];
 
     hoverText.appendMarkdown(output.join('\n'));
 
@@ -115,7 +115,7 @@ export function activate(context: IContext) {
     }
 
     const helper = new LookupHelper(document, context);
-    const astResult = helper.lookupAST(params.position);
+    const astResult = await helper.lookupAST(params.position);
 
     if (!astResult) {
       return;

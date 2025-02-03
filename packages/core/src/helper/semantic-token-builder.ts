@@ -18,7 +18,7 @@ import {
   Token,
   TokenType
 } from 'miniscript-core';
-import type {
+import {
   SemanticTokensBuilder,
   SemanticTokensLegend
 } from 'vscode-languageserver';
@@ -277,6 +277,11 @@ class TokenHandler {
     _statementStart: boolean = false
   ) {
     const me = this;
+
+    if (me.token.type === TokenType.Invalid) {
+      me.next();
+      return;
+    }
 
     // greybel
     if (GreybelSelectors.Envar(me.token)) {
@@ -804,6 +809,7 @@ class TokenHandler {
     statementStart: boolean = false
   ) {
     const me = this;
+
     me.processBitwise(asLval, statementStart);
 
     while (
@@ -892,6 +898,7 @@ class TokenHandler {
 
   private processIsa(asLval: boolean = false, statementStart: boolean = false) {
     const me = this;
+
     me.processBitwiseOr(asLval, statementStart);
 
     if (Selectors.Isa(me.token)) {
@@ -1544,9 +1551,13 @@ class TokenHandler {
   process() {
     const me = this;
 
-    me.next();
-
     while (!Selectors.EndOfFile(me.token)) {
+      me.next();
+
+      if (me.token.type === TokenType.Invalid) {
+        continue;
+      }
+
       me.skipNewlines();
 
       if (Selectors.EndOfFile(me.token)) break;

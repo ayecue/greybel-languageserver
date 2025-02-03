@@ -56,7 +56,7 @@ export function activate(context: IContext) {
       const activeDocument = await context.documentManager.getLatest(document);
 
       const helper = new LookupHelper(activeDocument.textDocument, context);
-      const astResult = helper.lookupAST(params.position);
+      const astResult = await helper.lookupAST(params.position);
       const completionListBuilder = new CompletionListBuilder();
 
       if (astResult) {

@@ -186,10 +186,10 @@ export class LookupHelper {
     return result;
   }
 
-  lookupAST(position: Position): LookupASTResult | null {
+  async lookupAST(position: Position): Promise<LookupASTResult | null> {
     const me = this;
-    const chunk = this.context.documentManager.get(me.document)
-      .document as ASTChunk;
+    const activeDocument = await this.context.documentManager.getLatest(me.document);
+    const chunk = activeDocument.document as ASTChunk;
     const lineItems = chunk.lines[position.line + 1];
 
     if (!lineItems) {
@@ -289,9 +289,9 @@ export class LookupHelper {
     return typeDoc.resolveType(closest, true);
   }
 
-  lookupType(position: Position): Promise<IEntity | null> {
+  async lookupType(position: Position): Promise<IEntity | null> {
     const me = this;
-    const astResult = me.lookupAST(position);
+    const astResult = await me.lookupAST(position);
 
     // nothing to get info for
     if (!astResult) {

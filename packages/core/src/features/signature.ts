@@ -37,7 +37,7 @@ export function activate(context: IContext) {
 
     await context.documentManager.getLatest(document);
     const helper = new LookupHelper(document, context);
-    const astResult = helper.lookupAST(params.position);
+    const astResult = await helper.lookupAST(params.position);
 
     if (!astResult) {
       return;
