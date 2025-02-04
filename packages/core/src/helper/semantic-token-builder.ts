@@ -10,7 +10,6 @@ import {
   Keyword,
   LiteralToken,
   Operator,
-  ParserValidatorm,
   Selector,
   SelectorGroup,
   SelectorGroups,
@@ -132,17 +131,6 @@ export class TokenHandler {
     return false;
   }
 
-  private requireToken(selector: Selector): Token | null {
-    const token = this.token;
-
-    if (!selector(token)) {
-      return null;
-    }
-
-    this.next();
-    return token;
-  }
-
   private processMultilineToken(token: Token, lines: string[], type: SemanticTokenType) {
     if (lines.length > 1) {
       this._builder.push(
@@ -177,14 +165,11 @@ export class TokenHandler {
     const me = this;
 
     if (!SelectorGroups.BlockEndOfLine(me.token)) {
-      me.next();
-
-      const lParenToken = me.requireToken(Selectors.LParenthesis);
-      if (!lParenToken) return;
+      if (!me.consume(Selectors.LParenthesis)) return;
       me._builder.push(
-        lParenToken.start.line - 1,
-        lParenToken.start.character - 1,
-        lParenToken.value.length,
+        me.previousToken.start.line - 1,
+        me.previousToken.start.character - 1,
+        me.previousToken.value.length,
         SemanticTokenType.Punctuator,
         0
       );
@@ -213,8 +198,7 @@ export class TokenHandler {
           );
 
           while (!Selectors.ArgumentSeperator(me.token) && !Selectors.RParenthesis(me.token) && !Selectors.EndOfLine(me.token)) {
-            me.processCurrent();
-            me.next();
+            me.process();
           }
         }
 
@@ -313,14 +297,17 @@ export class TokenHandler {
     const me = this;
 
     if (me.token.type !== TokenType.Identifier) {
-      me._builder.push(
-        me.token.start.line - 1,
-        me.token.start.character - 1,
-        me.token.value.length,
-        SemanticTokenType.Variable,
-        0
-      );
+      return;
     }
+
+    me._builder.push(
+      me.token.start.line - 1,
+      me.token.start.character - 1,
+      me.token.value.length,
+      SemanticTokenType.Variable,
+      0
+    );
+    me.next();
 
     if (!me.consume(GreybelSelectors.From)) {
       return;
@@ -418,6 +405,7 @@ export class TokenHandler {
       SemanticTokenType.Keyword,
       0
     );
+    this.next();
 
     switch (token.value) {
       case Keyword.Function: {
@@ -455,6 +443,7 @@ export class TokenHandler {
   private processStringLiteral() {
     const token = this.token as LiteralToken;
     this.processMultilineToken(token as Token, token.raw.split('\n'), SemanticTokenType.String);
+    this.next();
   }
 
   private processNumericLiteral() {
@@ -466,6 +455,7 @@ export class TokenHandler {
       SemanticTokenType.Number,
       0
     );
+    this.next();
   }
 
   private processBooleanLiteral() {
@@ -477,6 +467,7 @@ export class TokenHandler {
       SemanticTokenType.Constant,
       0
     );
+    this.next();
   }
 
   private processNilLiteral() {
@@ -488,6 +479,7 @@ export class TokenHandler {
       SemanticTokenType.Constant,
       0
     );
+    this.next();
   }
 
   private processIdentifier() {
@@ -506,6 +498,7 @@ export class TokenHandler {
         SemanticTokenType.Property,
         modifier
       );
+      this.next();
       return;
     }
 
@@ -521,6 +514,7 @@ export class TokenHandler {
       SemanticTokenType.Variable,
       modifier
     );
+    this.next();
   }
 
   private processPunctuator() {
@@ -567,6 +561,8 @@ export class TokenHandler {
         break;
       }
     }
+
+    this.next();
   }
 
   private processComment() {
@@ -575,9 +571,10 @@ export class TokenHandler {
     } else {
       this.processMultilineToken(this.token, `//${this.token.value}`.split('\n'), SemanticTokenType.Comment);
     }
+    this.next();
   }
 
-  private processCurrent() {
+  private process() {
     const me = this;
 
     switch (me.token.type) {
@@ -614,16 +611,20 @@ export class TokenHandler {
         this.processComment();
         break;
       }
+      default: {
+        me.next();
+      }
     }
   }
 
-  process() {
+  digest() {
     const me = this;
 
-    do {
-      me.next();
-      me.processCurrent();
-    } while (!Selectors.EndOfFile(me.token));
+    me.next();
+
+    while (!Selectors.EndOfFile(me.token)) {
+      me.process();
+    }
   }
 }
 
@@ -635,6 +636,6 @@ export function buildTokens(
     unsafe: true
   });
   const handler = new TokenHandler(lexer, builder);
-  handler.process();
+  handler.digest();
   return builder;
 }
