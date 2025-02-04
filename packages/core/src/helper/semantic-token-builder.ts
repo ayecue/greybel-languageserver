@@ -342,7 +342,6 @@ export class TokenHandler {
       SemanticTokenType.Punctuator,
       0
     );
-    me.next();
 
     if (TokenType.StringLiteral !== me.token.type) {
       return;
