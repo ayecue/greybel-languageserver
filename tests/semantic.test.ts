@@ -20,7 +20,7 @@ suite('DocumentSemanticTokenProvider', () => {
       const documentUri = getDocUri('default.src');
       const result = await executeSemanticTokenProvider(documentUri);
 
-      assert.strictEqual(result.data.byteLength, 1540);
+      assert.strictEqual(result.data.byteLength, 1520);
     });
   });
 

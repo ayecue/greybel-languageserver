@@ -1,6 +1,6 @@
 {
   "name": "greybel-languageserver-core",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Core functionality of language server for GreyScript",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
