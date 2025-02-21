@@ -66,17 +66,31 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     return filePaths.map((it) => URI.parse(it));
   }
 
-  async findExistingPath(...uris: string[]): Promise<string | null> {
-    if (uris.length === 0) {
+  async findExistingPath(mainUri: string, ...altUris: string[]): Promise<string | null> {
+    const mainItem = await this.getTextDocument(mainUri);
+    if (mainItem != null) return mainUri;
+
+    if (altUris.length === 0) {
       return null;
     }
 
-    for (let index = 0; index < uris.length; index++) {
-      const item = await this.getTextDocument(uris[index])
-      if (item != null) return uris[index];
-    }
+    try {
+      const altItemUri = await Promise.any(
+        altUris.map(async (uri) => {
+          const item = await this.getTextDocument(uri);
+          if (item != null) return uri;
+          throw new Error('Alternative path could not resolve');
+        })
+      );
 
-    return null;
+      if (altItemUri != null) {
+        return altItemUri;
+      }
+
+      return null;
+    } catch (err) {
+      return null;
+    }
   }
 
   getAllTextDocuments(): TextDocument[] {
