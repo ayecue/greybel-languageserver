@@ -31,12 +31,26 @@ export class DocumentURIBuilder {
   readonly workspaceFolderUri: URI | null;
   readonly rootPath: URI;
 
+  static async fromTextDocument(
+    textDocument: TextDocument,
+    context: IContext
+  ): Promise<DocumentURIBuilder> {
+    const textDocumentUri = URI.parse(textDocument.uri);
+    const workspaceFolderUri =
+      await context.fs.getWorkspaceFolderUri(textDocumentUri);
+
+    return new DocumentURIBuilder(
+      Utils.joinPath(textDocumentUri, '..'),
+      workspaceFolderUri
+    );
+  }
+
   constructor(rootPath: URI, workspaceFolderUri: URI = null) {
     this.workspaceFolderUri = workspaceFolderUri;
     this.rootPath = rootPath;
   }
 
-  getFromWorkspaceFolder(path: string): string {
+  private getFromWorkspaceFolder(path: string): string {
     if (this.workspaceFolderUri == null) {
       console.warn(
         'Workspace folders are not available. Falling back to only relative paths.'
@@ -47,20 +61,38 @@ export class DocumentURIBuilder {
     return Utils.joinPath(this.workspaceFolderUri, path).toString();
   }
 
-  getFromRootPath(path: string): string {
+  private getFromRootPath(path: string): string {
     return Utils.joinPath(this.rootPath, path).toString();
   }
 
-  async getPathWithContext(path: string, context: IContext): Promise<string> {
+  private getAlternativePathsWithContext(
+    path: string,
+    context: IContext
+  ): string[] {
     if (path.startsWith('/')) {
-      return context.fs.findExistingPath(
-        this.getFromWorkspaceFolder(path),
-        this.getFromWorkspaceFolder(`${path}.src`)
-      );
+      return context.getConfiguration().fileExtensions.map((ext) => {
+        return this.getFromWorkspaceFolder(`${path}.${ext}`);
+      });
     }
+    return context.getConfiguration().fileExtensions.map((ext) => {
+      return this.getFromRootPath(`${path}.${ext}`);
+    });
+  }
+
+  private getOriginalPath(path: string): string {
+    if (path.startsWith('/')) {
+      return this.getFromWorkspaceFolder(path);
+    }
+    return this.getFromRootPath(path);
+  }
+
+  async getPathWithContext(
+    path: string,
+    context: IContext
+  ): Promise<string | null> {
     return context.fs.findExistingPath(
-      this.getFromRootPath(path),
-      this.getFromRootPath(`${path}.src`)
+      this.getOriginalPath(path),
+      ...this.getAlternativePathsWithContext(path, context)
     );
   }
 }
@@ -101,17 +133,10 @@ export class ActiveDocument implements IActiveDocument {
       rootChunk.nativeImports
         .filter((nativeImport) => nativeImport.directory)
         .map(async (nativeImport) => {
-          let path = null;
-
-          if (nativeImport.directory.startsWith('/')) {
-            path = await context.fs.findExistingPath(
-              builder.getFromWorkspaceFolder(nativeImport.directory)
-            );
-          } else {
-            path = await context.fs.findExistingPath(
-              builder.getFromRootPath(nativeImport.directory)
-            );
-          }
+          const path = await builder.getPathWithContext(
+            nativeImport.directory,
+            context
+          );
 
           if (path == null) {
             return null;

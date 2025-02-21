@@ -188,7 +188,9 @@ export class LookupHelper {
 
   async lookupAST(position: Position): Promise<LookupASTResult | null> {
     const me = this;
-    const activeDocument = await this.context.documentManager.getLatest(me.document);
+    const activeDocument = await this.context.documentManager.getLatest(
+      me.document
+    );
     const chunk = activeDocument.document as ASTChunk;
     const lineItems = chunk.lines[position.line + 1];
 

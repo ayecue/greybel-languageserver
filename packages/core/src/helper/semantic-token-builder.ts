@@ -131,7 +131,11 @@ export class TokenHandler {
     return false;
   }
 
-  private processMultilineToken(token: Token, lines: string[], type: SemanticTokenType) {
+  private processMultilineToken(
+    token: Token,
+    lines: string[],
+    type: SemanticTokenType
+  ) {
     if (lines.length > 1) {
       this._builder.push(
         token.start.line - 1,
@@ -143,7 +147,7 @@ export class TokenHandler {
 
       for (let offset = 1; offset < lines.length; offset++) {
         this._builder.push(
-          (token.start.line + offset) - 1,
+          token.start.line + offset - 1,
           0,
           lines[offset].length,
           type,
@@ -197,7 +201,11 @@ export class TokenHandler {
             0
           );
 
-          while (!Selectors.ArgumentSeperator(me.token) && !Selectors.RParenthesis(me.token) && !Selectors.EndOfLine(me.token)) {
+          while (
+            !Selectors.ArgumentSeperator(me.token) &&
+            !Selectors.RParenthesis(me.token) &&
+            !Selectors.EndOfLine(me.token)
+          ) {
             me.process();
           }
         }
@@ -223,7 +231,6 @@ export class TokenHandler {
           SemanticTokenType.Punctuator,
           0
         );
-        return;
       }
     }
   }
@@ -434,14 +441,17 @@ export class TokenHandler {
       }
       case GreyScriptKeyword.ImportCode: {
         this.processNativeImportCodeStatement();
-        return;
       }
     }
   }
 
   private processStringLiteral() {
     const token = this.token as LiteralToken;
-    this.processMultilineToken(token as Token, token.raw.split('\n'), SemanticTokenType.String);
+    this.processMultilineToken(
+      token as Token,
+      token.raw.split('\n'),
+      SemanticTokenType.String
+    );
     this.next();
   }
 
@@ -566,9 +576,17 @@ export class TokenHandler {
 
   private processComment() {
     if (this.token.lastLine != null) {
-      this.processMultilineToken(this.token, `/*${this.token.value}*/`.split('\n'), SemanticTokenType.Comment);
+      this.processMultilineToken(
+        this.token,
+        `/*${this.token.value}*/`.split('\n'),
+        SemanticTokenType.Comment
+      );
     } else {
-      this.processMultilineToken(this.token, `//${this.token.value}`.split('\n'), SemanticTokenType.Comment);
+      this.processMultilineToken(
+        this.token,
+        `//${this.token.value}`.split('\n'),
+        SemanticTokenType.Comment
+      );
     }
     this.next();
   }

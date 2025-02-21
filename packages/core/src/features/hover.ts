@@ -12,26 +12,11 @@ import type { Hover, HoverParams } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 
+import { DocumentURIBuilder } from '../helper/document-manager';
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { MarkdownString } from '../helper/markdown-string';
 import { createHover, formatKind, formatTypes } from '../helper/tooltip';
 import { IContext, LanguageId } from '../types';
-
-const getRootDirectory = async (
-  context: IContext,
-  textDocument: TextDocument,
-  target: string
-) => {
-  const textDocumentUri = URI.parse(textDocument.uri);
-  const workspaceFolderUri =
-    await context.fs.getWorkspaceFolderUri(textDocumentUri);
-  if (workspaceFolderUri == null) {
-    return Utils.joinPath(textDocumentUri, '..');
-  }
-  return target.startsWith('/')
-    ? workspaceFolderUri
-    : Utils.joinPath(textDocumentUri, '..');
-};
 
 export function activate(context: IContext) {
   async function generateImportCodeHover(
@@ -40,27 +25,27 @@ export function activate(context: IContext) {
   ): Promise<Hover> {
     const hoverText = new MarkdownString('');
     const importAst = astResult.closest as ASTImportCodeExpression;
-    const rootDir = await getRootDirectory(
-      context,
+    const documentUriBuilder = await DocumentURIBuilder.fromTextDocument(
       textDocument,
-      importAst.directory
+      context
     );
-    const target = await context.fs.findExistingPath(
-      Utils.joinPath(rootDir, importAst.directory).toString()
+    const target = await documentUriBuilder.getPathWithContext(
+      importAst.directory,
+      context
     );
     const output =
       target == null
         ? ['Cannot open file.']
         : [
-          `[Imports file "${path.basename(
-            target
-          )}" inside this code](${target})`,
-          '***',
-          'Click the link above to open the file.',
-          '',
-          'Use the build command to create an installer',
-          'file which will bundle all dependencies.'
-        ];
+            `[Imports file "${path.basename(
+              target
+            )}" inside this code](${target})`,
+            '***',
+            'Click the link above to open the file.',
+            '',
+            'Use the build command to create an installer',
+            'file which will bundle all dependencies.'
+          ];
 
     hoverText.appendMarkdown(output.join('\n'));
 
@@ -78,23 +63,24 @@ export function activate(context: IContext) {
     const importCodeAst = astResult.closest as ASTFeatureImportExpression;
     const fileDir = importCodeAst.path;
 
-    const rootDir = await getRootDirectory(context, textDocument, fileDir);
-    const result = Utils.joinPath(rootDir, fileDir);
-    const resultAlt = Utils.joinPath(rootDir, `${fileDir}`);
-    const target = await context.fs.findExistingPath(
-      result.toString(),
-      resultAlt.toString()
+    const documentUriBuilder = await DocumentURIBuilder.fromTextDocument(
+      textDocument,
+      context
+    );
+    const target = await documentUriBuilder.getPathWithContext(
+      fileDir,
+      context
     );
     const output: string[] =
       target == null
         ? ['Cannot open file.']
         : [
-          `[Inserts file "${path.basename(
-            target
-          )}" inside this code when building](${target})`,
-          '***',
-          'Click the link above to open the file.'
-        ];
+            `[Inserts file "${path.basename(
+              target
+            )}" inside this code when building](${target})`,
+            '***',
+            'Click the link above to open the file.'
+          ];
 
     hoverText.appendMarkdown(output.join('\n'));
 
