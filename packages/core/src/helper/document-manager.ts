@@ -131,7 +131,7 @@ export class ActiveDocument implements IActiveDocument {
     const context = this.documentManager.context;
     const imports = await Promise.all(
       rootChunk.nativeImports
-        .filter((nativeImport) => nativeImport.directory)
+        .filter((nativeImport) => nativeImport.directory && nativeImport.eval)
         .map(async (nativeImport) => {
           const path = await builder.getPathWithContext(
             nativeImport.directory,
