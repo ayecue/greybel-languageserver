@@ -1,6 +1,6 @@
 import LRU from 'lru-cache';
 import { Document as TypeDocument } from 'miniscript-type-analyzer';
-import toposort from 'toposort';
+import { toposort } from 'fast-toposort';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import {
@@ -251,7 +251,7 @@ export class DocumentMerger implements IDocumentMerger {
         });
       })
     );
-    const topoSorted = toposort.array(documentUris, documentGraph.flat());
+    const topoSorted = toposort(documentUris, documentGraph.flat());
 
     for (let index = topoSorted.length - 1; index >= 0; index--) {
       const itemUri = topoSorted[index];

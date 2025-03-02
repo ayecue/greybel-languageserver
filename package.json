@@ -35,7 +35,7 @@
     "jest": "^27.4.5",
     "lru-cache": "^7.18.3",
     "miniscript-type-analyzer": ">=0.20.4",
-    "toposort": "^2.0.2",
+    "fast-toposort": "^0.1.0",
     "mocha": "^10.7.3",
     "non-blocking-schedule": "^0.2.0",
     "ts-node": "^10.9.2",
