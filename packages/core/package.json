@@ -1,6 +1,6 @@
 {
   "name": "greybel-languageserver-core",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Core functionality of language server for GreyScript",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -79,7 +79,7 @@
     "color-convert": "^2.0.1",
     "lru-cache": "^7.18.3",
     "non-blocking-schedule": "^0.2.0",
-    "fast-toposort": "^0.1.0",
+    "fast-toposort": "^0.1.1",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.11",
     "vscode-uri": "^3.0.8"
