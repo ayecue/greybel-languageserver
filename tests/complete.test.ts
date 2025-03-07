@@ -22,7 +22,7 @@ suite('CompletionItemProvider', () => {
       const documentUri = getDocUri('invalid-chunk.src');
       const result = await executeCompletionItemProvider(documentUri, new vscode.Position(6, 1));
 
-      assert.strictEqual(result.items.length, 302);
+      assert.strictEqual(result.items.length, 303);
     });
   });
 });
