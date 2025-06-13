@@ -1,6 +1,7 @@
-import LRU from 'lru-cache';
-import { Document as TypeDocument } from 'miniscript-type-analyzer';
 import { toposort } from 'fast-toposort';
+import LRU from 'lru-cache';
+import { SignatureDefinitionBaseType } from 'meta-utils';
+import { Document as TypeDocument } from 'miniscript-type-analyzer';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import {
@@ -8,10 +9,16 @@ import {
   IActiveDocument,
   IContext,
   IDocumentMerger,
+  parseDependencyRawLocation,
   TypeAnalyzerStrategy
 } from '../types';
 import { hash } from './hash';
 import typeManager from './type-manager';
+
+type ImportWithNamespace = {
+  namespace: string;
+  typeDoc: TypeDocument;
+};
 
 export class DocumentMerger implements IDocumentMerger {
   readonly results: LRU<number, TypeDocument>;
@@ -55,6 +62,57 @@ export class DocumentMerger implements IDocumentMerger {
 
   flushCache() {
     this.results.clear();
+  }
+
+  private extendImportsWithNamespace(
+    typeDoc: TypeDocument,
+    items: ImportWithNamespace[]
+  ) {
+    items.forEach((item) => {
+      const entity = item.typeDoc
+        .getRootScopeContext()
+        .scope.resolveNamespace('module', true)
+        ?.resolveProperty('exports', true);
+
+      if (entity == null) return;
+
+      const rootScope = typeDoc.getRootScopeContext().scope;
+      const existingNamespace = rootScope.resolveProperty(item.namespace);
+
+      if (existingNamespace) {
+        existingNamespace.types.delete(SignatureDefinitionBaseType.Any);
+        existingNamespace.extend(entity, true);
+        return;
+      }
+
+      rootScope.setProperty(item.namespace, entity, true);
+    });
+  }
+
+  private async aggregateImportsWithNamespace(
+    activeDocument: IActiveDocument
+  ): Promise<ImportWithNamespace[]> {
+    const result: ImportWithNamespace[] = [];
+
+    if (activeDocument == null) {
+      return result;
+    }
+
+    const importUris = await activeDocument.getImportUris();
+
+    importUris.forEach((rawLocation) => {
+      const importDef = parseDependencyRawLocation(rawLocation);
+      const namespace = importDef.args[0];
+      if (namespace == null) return;
+      const itemTypeDoc = typeManager.get(importDef.location);
+      if (itemTypeDoc === null) return;
+      result.push({
+        namespace,
+        typeDoc: itemTypeDoc
+      });
+    });
+
+    return result;
   }
 
   private async processByDependencies(
@@ -148,23 +206,24 @@ export class DocumentMerger implements IDocumentMerger {
     }
 
     const externalTypeDocs: TypeDocument[] = [];
-    const importsWithNamespace: {
-      namespace: string;
-      typeDoc: TypeDocument;
-    }[] = [];
+    const importsWithNamespace: ImportWithNamespace[] = [];
 
     this.registerCacheKey(cacheKey, documentUri);
 
     const dependencies = await context.documentManager
       .get(document)
       .getDependencies();
+    const locations = Array.from(
+      new Set(dependencies.map((dep) => dep.location))
+    );
     const refs: Map<string, TypeDocument | null> = new Map([
       [documentUri, null]
     ]);
 
+    // process dependencies in parallel and extend to refs
     await Promise.all(
-      dependencies.map(async (dep) => {
-        const item = context.documentManager.results.get(dep.location);
+      locations.map(async (location) => {
+        const item = context.documentManager.results.get(location);
 
         if (!item) {
           return;
@@ -176,38 +235,31 @@ export class DocumentMerger implements IDocumentMerger {
           return;
         }
 
-        const itemTypeDoc = await this.processByDependencies(
-          textDocument,
-          context,
-          refs
-        );
-
-        if (itemTypeDoc === null) return;
-        if (dep.type === DependencyType.Import) {
-          importsWithNamespace.push({
-            namespace: dep.args[0],
-            typeDoc: itemTypeDoc
-          });
-          return;
-        }
-        externalTypeDocs.push(itemTypeDoc);
+        await this.processByDependencies(textDocument, context, refs);
       })
     );
 
+    // collect native imports, includes and imports with namespace
+    dependencies.forEach((dep) => {
+      const itemTypeDoc = refs.get(dep.location);
+
+      if (itemTypeDoc === null) return;
+      if (dep.type === DependencyType.Import) {
+        const namespace = dep.args[0];
+        if (namespace == null) return;
+        importsWithNamespace.push({
+          namespace,
+          typeDoc: itemTypeDoc
+        });
+        return;
+      }
+      externalTypeDocs.push(itemTypeDoc);
+    });
+
     const mergedTypeDoc = typeDoc.merge(...externalTypeDocs);
 
-    importsWithNamespace.forEach((item, index) => {
-      const entity = item.typeDoc
-        .getRootScopeContext()
-        .scope.resolveNamespace('module', true)
-        ?.resolveProperty('exports', true);
-
-      if (entity == null) return;
-
-      mergedTypeDoc
-        .getRootScopeContext()
-        .scope.setProperty(item.namespace ?? `unknown${index}`, entity, true);
-    });
+    // extend imports with namespace
+    this.extendImportsWithNamespace(mergedTypeDoc, importsWithNamespace);
 
     this.results.set(cacheKey, mergedTypeDoc);
     return mergedTypeDoc;
@@ -262,7 +314,16 @@ export class DocumentMerger implements IDocumentMerger {
       externalTypeDocs.push(itemTypeDoc);
     }
 
+    // collect imports with namespace
+    const activeDocument = context.documentManager.get(document);
+    const importsWithNamespace: ImportWithNamespace[] =
+      await this.aggregateImportsWithNamespace(activeDocument);
+
     const mergedTypeDoc = typeDoc.merge(...externalTypeDocs);
+
+    // extend imports with namespace
+    this.extendImportsWithNamespace(mergedTypeDoc, importsWithNamespace);
+
     this.results.set(cacheKey, mergedTypeDoc);
     return mergedTypeDoc;
   }
