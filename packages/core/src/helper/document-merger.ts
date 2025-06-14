@@ -1,5 +1,5 @@
 import { toposort } from 'fast-toposort';
-import LRU from 'lru-cache';
+import { LRUCache as LRU } from 'lru-cache';
 import { Document as TypeDocument } from 'miniscript-type-analyzer';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -12,12 +12,10 @@ import {
   TypeAnalyzerStrategy
 } from '../types';
 import { hash } from './hash';
-import typeManager, { aggregateImportsWithNamespace, createTypeDocumentWithNamespaces } from './type-manager';
-
-type ImportWithNamespace = {
-  namespace: string;
-  typeDoc: TypeDocument;
-};
+import typeManager, {
+  aggregateImportsWithNamespace,
+  createTypeDocumentWithNamespaces
+} from './type-manager';
 
 export class DocumentMerger implements IDocumentMerger {
   readonly results: LRU<number, TypeDocument>;
@@ -111,8 +109,22 @@ export class DocumentMerger implements IDocumentMerger {
       })
     );
 
-    const namespacesOfImports = await aggregateImportsWithNamespace(activeDocument, refs);
-    const mergedTypeDoc = typeDoc.merge(createTypeDocumentWithNamespaces(typeDoc, namespacesOfImports), ...externalTypeDocs);
+    const namespacesOfImports = await aggregateImportsWithNamespace(
+      activeDocument,
+      refs
+    );
+
+    if (namespacesOfImports.length === 0) {
+      const mergedTypeDoc = typeDoc.merge(...externalTypeDocs);
+      refs.set(documentUri, mergedTypeDoc);
+      this.results.set(cacheKey, mergedTypeDoc);
+      return mergedTypeDoc;
+    }
+
+    const mergedTypeDoc = typeDoc.merge(
+      createTypeDocumentWithNamespaces(typeDoc, namespacesOfImports),
+      ...externalTypeDocs
+    );
     refs.set(documentUri, mergedTypeDoc);
     this.results.set(cacheKey, mergedTypeDoc);
     return mergedTypeDoc;
@@ -136,6 +148,72 @@ export class DocumentMerger implements IDocumentMerger {
     return this.processByDependencies(rootNode, context, refs);
   }
 
+  private async processByWorkspace(
+    documentUri: string,
+    context: IContext
+  ): Promise<TypeDocument | null> {
+    const typeDoc = typeManager.get(documentUri);
+    if (typeDoc === null) return null;
+    const activeDocument = context.documentManager.results.get(documentUri);
+
+    // collect imports with namespace if possible
+    if (activeDocument != null) {
+      const namespacesOfImports =
+        await aggregateImportsWithNamespace(activeDocument);
+
+      if (namespacesOfImports.length === 0) {
+        return typeDoc;
+      }
+
+      const mergedTypeDoc = typeDoc.merge(
+        createTypeDocumentWithNamespaces(typeDoc, namespacesOfImports)
+      );
+      return mergedTypeDoc;
+    }
+
+    return typeDoc;
+  }
+
+  private async getExternalTypeDocumentsRelatedToDocument(
+    document: TextDocument,
+    allDocuments: IActiveDocument[],
+    context: IContext
+  ): Promise<TypeDocument[]> {
+    const documentUris = allDocuments.map((item) => item.textDocument.uri);
+    // sort by it's usage
+    const documentGraph: [string, string][][] = await Promise.all(
+      allDocuments.map(async (item) => {
+        const depUris = await item.getDependencies();
+
+        return depUris.map((dep) => {
+          return [item.textDocument.uri, dep.location];
+        });
+      })
+    );
+    const topoSorted = toposort(documentUris, documentGraph.flat());
+    const externalTypeDocs: TypeDocument[] = new Array<TypeDocument>(
+      topoSorted.length
+    );
+    const defers: Promise<void>[] = [];
+
+    for (let index = topoSorted.length - 1; index >= 0; index--) {
+      const itemUri = topoSorted[index];
+      const process = async () => {
+        const itemTypeDoc = await this.processByWorkspace(itemUri, context);
+        if (itemTypeDoc == null) return;
+        externalTypeDocs[index] = itemTypeDoc;
+      };
+      defers.push(process());
+    }
+
+    await Promise.all(defers);
+
+    const availableExternalTypeDocs = externalTypeDocs.filter(
+      (item) => item != null
+    );
+    return availableExternalTypeDocs;
+  }
+
   private async buildByWorkspace(
     document: TextDocument,
     context: IContext
@@ -147,7 +225,6 @@ export class DocumentMerger implements IDocumentMerger {
       return null;
     }
 
-    const externalTypeDocs: TypeDocument[] = [];
     const allFileUris = await context.fs.getWorkspaceRelatedFiles();
     const allDocuments = await Promise.all(
       allFileUris.map(async (uri) => {
@@ -163,43 +240,22 @@ export class DocumentMerger implements IDocumentMerger {
 
     this.registerCacheKey(cacheKey, documentUri);
 
-    const documentUris = allDocuments.map((item) => item.textDocument.uri);
-    // sort by it's usage
-    const documentGraph: [string, string][][] = await Promise.all(
-      allDocuments.map(async (item) => {
-        const depUris = await item.getDependencies();
-
-        return depUris.map((dep) => {
-          return [item.textDocument.uri, dep.location];
-        });
-      })
-    );
-    const topoSorted = toposort(documentUris, documentGraph.flat());
-
-    for (let index = topoSorted.length - 1; index >= 0; index--) {
-      const itemUri = topoSorted[index];
-      if (itemUri === documentUri) continue;
-      const itemTypeDoc = typeManager.get(itemUri);
-      if (itemTypeDoc === null) continue;
-
-      const itemActiveDocument = context.documentManager.results.get(itemUri);
-
-      // collect imports with namespace if possible
-      if (itemActiveDocument != null) {
-        const itemNamespacesOfImports = await aggregateImportsWithNamespace(itemActiveDocument);
-        const itemMergedTypeDoc = itemTypeDoc.merge(createTypeDocumentWithNamespaces(typeDoc, itemNamespacesOfImports));
-        externalTypeDocs.push(itemMergedTypeDoc);
-        continue;
-      }
-
-      externalTypeDocs.push(itemTypeDoc);
-    }
+    const externalTypeDocs =
+      await this.getExternalTypeDocumentsRelatedToDocument(
+        document,
+        allDocuments,
+        context
+      );
 
     // collect imports with namespace
     const activeDocument = context.documentManager.get(document);
-    const namespacesOfImports = await aggregateImportsWithNamespace(activeDocument);
+    const namespacesOfImports =
+      await aggregateImportsWithNamespace(activeDocument);
 
-    const mergedTypeDoc = typeDoc.merge(createTypeDocumentWithNamespaces(typeDoc, namespacesOfImports), ...externalTypeDocs);
+    const mergedTypeDoc = typeDoc.merge(
+      createTypeDocumentWithNamespaces(typeDoc, namespacesOfImports),
+      ...externalTypeDocs
+    );
     this.results.set(cacheKey, mergedTypeDoc);
     return mergedTypeDoc;
   }

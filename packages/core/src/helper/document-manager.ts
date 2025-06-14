@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import { ASTChunkGreyScript, Parser } from 'greyscript-core';
-import LRU from 'lru-cache';
+import { LRUCache as LRU } from 'lru-cache';
 import { ASTBaseBlockWithScope, ASTIdentifier } from 'miniscript-core';
 import { schedule } from 'non-blocking-schedule';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -306,8 +306,13 @@ export class ActiveDocument implements IActiveDocument {
       return initialNode;
     }
 
-    const visited: Map<string, IActiveDocumentImportGraphNode> = new Map([[this.textDocument.uri, initialNode]]);
-    const traverse = async (rootResult: ActiveDocument, rootNode: IActiveDocumentImportGraphNode) => {
+    const visited: Map<string, IActiveDocumentImportGraphNode> = new Map([
+      [this.textDocument.uri, initialNode]
+    ]);
+    const traverse = async (
+      rootResult: ActiveDocument,
+      rootNode: IActiveDocumentImportGraphNode
+    ) => {
       const dependencies = await rootResult.getDependencies();
 
       for (const dependency of dependencies) {

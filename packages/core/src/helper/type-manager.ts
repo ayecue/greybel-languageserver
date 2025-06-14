@@ -1,7 +1,11 @@
 import { ASTChunkGreyScript } from 'greyscript-core';
-import { ASTPosition } from 'miniscript-core';
 import { greyscriptMeta } from 'greyscript-meta';
-import { TypeManager, Document as TypeDocument } from 'miniscript-type-analyzer';
+import { ASTPosition } from 'miniscript-core';
+import {
+  Document as TypeDocument,
+  TypeManager
+} from 'miniscript-type-analyzer';
+
 import { IActiveDocument, parseDependencyRawLocation } from '../types';
 
 export type ImportWithNamespace = {
@@ -26,7 +30,7 @@ export function createTypeDocumentWithNamespaces(
     root: new ASTChunkGreyScript({
       start: new ASTPosition(0, 0),
       end: new ASTPosition(0, 0),
-      range: [0, 0],
+      range: [0, 0]
     })
   });
 
@@ -63,7 +67,8 @@ export async function aggregateImportsWithNamespace(
     const importDef = parseDependencyRawLocation(rawLocation);
     const namespace = importDef.args[0];
     if (namespace == null) return;
-    const itemTypeDoc = refs?.get(importDef.location) ?? typeManager.get(importDef.location);
+    const itemTypeDoc =
+      refs?.get(importDef.location) ?? typeManager.get(importDef.location);
     if (itemTypeDoc === null) return;
     result.push({
       namespace,

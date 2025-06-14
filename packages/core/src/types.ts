@@ -5,7 +5,7 @@ import type {
 } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { URI } from 'vscode-uri';
-import type LRU from 'lru-cache';
+import type { LRUCache as LRU } from 'lru-cache';
 import type { ASTBaseBlockWithScope } from 'miniscript-core';
 import {
   Document as TypeDocument
