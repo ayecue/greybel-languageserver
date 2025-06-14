@@ -66,6 +66,7 @@ export interface IConfiguration {
 }
 
 export enum DependencyType {
+  Root = 'root',
   Include = 'include',
   Import = 'import',
   NativeImport = 'native-import'
@@ -114,11 +115,17 @@ export interface IActiveDocument {
   getImportUris(): Promise<DependencyRawLocation[]>;
   getNativeImportUris(): Promise<DependencyRawLocation[]>;
   getImports(nested?: boolean): Promise<IActiveDocumentImport[]>
+  getImportsGraph(): Promise<IActiveDocumentImportGraphNode>;
 }
 
 export interface IActiveDocumentImport {
   document: IActiveDocument;
   location: IDependencyLocation;
+}
+
+export interface IActiveDocumentImportGraphNode {
+  item: IActiveDocumentImport;
+  children: IActiveDocumentImportGraphNode[];
 }
 
 export interface IDocumentManager extends EventEmitter {

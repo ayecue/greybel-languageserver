@@ -48,27 +48,28 @@ export function createTypeDocumentWithNamespaces(
 }
 
 export async function aggregateImportsWithNamespace(
-    activeDocument: IActiveDocument
-  ): Promise<ImportWithNamespace[]> {
-    const result: ImportWithNamespace[] = [];
+  activeDocument: IActiveDocument,
+  refs?: Map<string, TypeDocument | null>
+): Promise<ImportWithNamespace[]> {
+  const result: ImportWithNamespace[] = [];
 
-    if (activeDocument == null) {
-      return result;
-    }
-
-    const importUris = await activeDocument.getImportUris();
-
-    importUris.forEach((rawLocation) => {
-      const importDef = parseDependencyRawLocation(rawLocation);
-      const namespace = importDef.args[0];
-      if (namespace == null) return;
-      const itemTypeDoc = typeManager.get(importDef.location);
-      if (itemTypeDoc === null) return;
-      result.push({
-        namespace,
-        typeDoc: itemTypeDoc
-      });
-    });
-
+  if (activeDocument == null) {
     return result;
   }
+
+  const importUris = await activeDocument.getImportUris();
+
+  importUris.forEach((rawLocation) => {
+    const importDef = parseDependencyRawLocation(rawLocation);
+    const namespace = importDef.args[0];
+    if (namespace == null) return;
+    const itemTypeDoc = refs?.get(importDef.location) ?? typeManager.get(importDef.location);
+    if (itemTypeDoc === null) return;
+    result.push({
+      namespace,
+      typeDoc: itemTypeDoc
+    });
+  });
+
+  return result;
+}

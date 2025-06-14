@@ -11,6 +11,7 @@ import {
   DependencyType,
   IActiveDocument,
   IActiveDocumentImport,
+  IActiveDocumentImportGraphNode,
   IContext,
   IDependencyLocation,
   IDocumentManager,
@@ -259,7 +260,7 @@ export class ActiveDocument implements IActiveDocument {
       return [];
     }
 
-    const imports: Set<IActiveDocumentImport> = new Set();
+    const imports: IActiveDocumentImport[] = [];
     const visited: Set<string> = new Set([this.textDocument.uri]);
     const traverse = async (rootResult: ActiveDocument) => {
       const dependencies = await rootResult.getDependencies();
@@ -273,7 +274,7 @@ export class ActiveDocument implements IActiveDocument {
 
         if (item === null) continue;
 
-        imports.add({
+        imports.push({
           document: item,
           location: dependency
         });
@@ -286,7 +287,61 @@ export class ActiveDocument implements IActiveDocument {
 
     await traverse(this);
 
-    return Array.from(imports);
+    return imports;
+  }
+
+  async getImportsGraph(): Promise<IActiveDocumentImportGraphNode> {
+    const initialNode: IActiveDocumentImportGraphNode = {
+      item: {
+        document: this,
+        location: {
+          type: DependencyType.Root,
+          location: this.textDocument.uri
+        }
+      },
+      children: []
+    };
+
+    if (this.document == null) {
+      return initialNode;
+    }
+
+    const visited: Map<string, IActiveDocumentImportGraphNode> = new Map([[this.textDocument.uri, initialNode]]);
+    const traverse = async (rootResult: ActiveDocument, rootNode: IActiveDocumentImportGraphNode) => {
+      const dependencies = await rootResult.getDependencies();
+
+      for (const dependency of dependencies) {
+        const existingNode = visited.get(dependency.location);
+
+        if (existingNode != null) {
+          rootNode.children.push(existingNode);
+          continue;
+        }
+
+        const item = await this.documentManager.open(dependency.location);
+
+        if (item === null) continue;
+
+        const childNode: IActiveDocumentImportGraphNode = {
+          item: {
+            document: item,
+            location: dependency
+          },
+          children: []
+        };
+
+        visited.set(dependency.location, childNode);
+        rootNode.children.push(childNode);
+
+        if (item.document !== null) {
+          await traverse(item, childNode);
+        }
+      }
+    };
+
+    await traverse(this, initialNode);
+
+    return initialNode;
   }
 }
 
