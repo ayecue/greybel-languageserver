@@ -2,7 +2,7 @@ import { createConnection, TextDocumentChangeEvent, TextDocuments } from "vscode
 import { TextDocument } from "vscode-languageserver-textdocument";
 import EventEmitter from "events";
 import { URI } from "vscode-uri";
-import LRUCache from "lru-cache";
+import { LRUCache } from "lru-cache";
 
 import { IContext, IFileSystem, LanguageId } from "greybel-languageserver-core";
 
