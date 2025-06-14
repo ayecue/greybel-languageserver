@@ -7,11 +7,11 @@ import fs from "fs";
 import { glob } from 'glob';
 
 import { IContext, IFileSystem, LanguageId } from '../../packages/core/src';
-import LRUCache from "lru-cache";
+import { LRUCache } from "lru-cache";
 
 export class FileSystem extends EventEmitter implements IFileSystem {
   private _context: IContext;
-  private _tempTextDocumentCache: LRUCache<string, TextDocument | null>;
+  private _tempTextDocumentCache: LRUCache<string, TextDocument>;
   private _textDocumentManager: TextDocuments<TextDocument>;
   private _workspace: ReturnType<typeof createConnection>['workspace'] | null;
 
@@ -101,7 +101,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
     } catch (err) {
     }
 
-    this._tempTextDocumentCache.set(targetUri, tempDoc);
+    this._tempTextDocumentCache.set(targetUri, tempDoc!);
 
     return tempDoc;
   }

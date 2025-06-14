@@ -33,7 +33,7 @@
     "greyscript-meta": ">=4.3.0",
     "greyscript-transpiler": ">=1.6.5",
     "jest": "^27.4.5",
-    "lru-cache": "^7.18.3",
+    "lru-cache": "^11.1.0",
     "miniscript-type-analyzer": ">=0.21.0",
     "fast-toposort": "^0.1.1",
     "mocha": "^10.7.3",
