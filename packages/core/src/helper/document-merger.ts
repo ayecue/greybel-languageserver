@@ -179,6 +179,7 @@ export class DocumentMerger implements IDocumentMerger {
     allDocuments: IActiveDocument[],
     context: IContext
   ): Promise<TypeDocument[]> {
+    const documentUri = document.uri;
     const documentUris = allDocuments.map((item) => item.textDocument.uri);
     // sort by it's usage
     const documentGraph: [string, string][][] = await Promise.all(
@@ -198,6 +199,7 @@ export class DocumentMerger implements IDocumentMerger {
 
     for (let index = topoSorted.length - 1; index >= 0; index--) {
       const itemUri = topoSorted[index];
+      if (itemUri === documentUri) continue;
       const process = async () => {
         const itemTypeDoc = await this.processByWorkspace(itemUri, context);
         if (itemTypeDoc == null) return;
