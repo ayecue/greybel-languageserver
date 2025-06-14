@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import fs from 'fs';
 import { glob } from 'glob';
 import { IContext, IFileSystem, LanguageId } from 'greybel-languageserver-core';
-import LRUCache from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import {
   createConnection,
   TextDocumentChangeEvent,
