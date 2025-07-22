@@ -93,7 +93,8 @@ export function activate(context: IContext) {
       return;
     }
 
-    const helper = new LookupHelper(document, context);
+    const activeDocument = await context.documentManager.getLatest(document);
+    const helper = new LookupHelper(activeDocument, context);
     const astResult = await helper.lookupAST(params.position);
 
     if (!astResult) {

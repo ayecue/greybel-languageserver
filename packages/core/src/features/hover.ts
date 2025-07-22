@@ -10,9 +10,8 @@ import {
 import path from 'path';
 import type { Hover, HoverParams } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { URI, Utils } from 'vscode-uri';
 
-import { DocumentURIBuilder } from '../helper/document-manager';
+import { DocumentURIBuilder } from '../helper/document-manager/document-uri-builder';
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { MarkdownString } from '../helper/markdown-string';
 import { createHover, formatKind, formatTypes } from '../helper/tooltip';
@@ -100,7 +99,8 @@ export function activate(context: IContext) {
       return;
     }
 
-    const helper = new LookupHelper(document, context);
+    const activeDocument = context.documentManager.get(document);
+    const helper = new LookupHelper(activeDocument, context);
     const astResult = await helper.lookupAST(params.position);
 
     if (!astResult) {

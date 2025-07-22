@@ -649,7 +649,7 @@ export function buildTokens(
   builder: SemanticTokensBuilder,
   document: IActiveDocument
 ): SemanticTokensBuilder {
-  const lexer = new Lexer(document.content, {
+  const lexer = new Lexer(document.textDocument.getText(), {
     unsafe: true
   });
   const handler = new TokenHandler(lexer, builder);

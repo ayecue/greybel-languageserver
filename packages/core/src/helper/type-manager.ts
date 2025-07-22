@@ -6,7 +6,12 @@ import {
   TypeManager
 } from 'miniscript-type-analyzer';
 
-import { IActiveDocument, parseDependencyRawLocation } from '../types';
+import {
+  DependencyType,
+  IActiveDocument,
+  IActiveDocumentImportGraphNode,
+  IDependencyLocation
+} from '../types';
 
 export type ImportWithNamespace = {
   namespace: string;
@@ -51,25 +56,49 @@ export function createTypeDocumentWithNamespaces(
   return typeDoc;
 }
 
-export async function aggregateImportsWithNamespace(
-  activeDocument: IActiveDocument,
-  refs?: Map<string, TypeDocument | null>
-): Promise<ImportWithNamespace[]> {
+export function aggregateImportsWithNamespaceFromLocations(
+  dependencyLocation: IDependencyLocation[],
+  refs: Map<string, IActiveDocument | null>
+): ImportWithNamespace[] {
   const result: ImportWithNamespace[] = [];
 
-  if (activeDocument == null) {
+  if (dependencyLocation == null) {
     return result;
   }
 
-  const importUris = await activeDocument.getImportUris();
-
-  importUris.forEach((rawLocation) => {
-    const importDef = parseDependencyRawLocation(rawLocation);
+  dependencyLocation.forEach((importDef) => {
     const namespace = importDef.args[0];
     if (namespace == null) return;
-    const itemTypeDoc =
-      refs?.get(importDef.location) ?? typeManager.get(importDef.location);
-    if (itemTypeDoc === null) return;
+    const itemTypeDoc = refs.get(importDef.location)?.typeDocument;
+    if (itemTypeDoc == null) return;
+    result.push({
+      namespace,
+      typeDoc: itemTypeDoc
+    });
+  });
+
+  return result;
+}
+
+export function aggregateImportsWithNamespaceFromGraph(
+  node: IActiveDocumentImportGraphNode,
+  refs: Map<string, TypeDocument | null>
+): ImportWithNamespace[] {
+  const result: ImportWithNamespace[] = [];
+
+  if (node == null) {
+    return result;
+  }
+
+  const importUris = node.children
+    .filter((child) => child.item.location.type === DependencyType.Import)
+    .map((child) => child.item.location);
+
+  importUris.forEach((importDef) => {
+    const namespace = importDef.args[0];
+    if (namespace == null) return;
+    const itemTypeDoc = refs.get(importDef.location);
+    if (itemTypeDoc == null) return;
     result.push({
       namespace,
       typeDoc: itemTypeDoc

@@ -84,7 +84,7 @@ export abstract class CoreContext extends EventEmitter implements IContext {
     const oldTypeAnalyzerConfig = this._configuration.typeAnalyzer;
 
     if (newTypeAnalyzerConfig.strategy !== oldTypeAnalyzerConfig.strategy || newTypeAnalyzerConfig.exclude !== oldTypeAnalyzerConfig.exclude) {
-      this.documentMerger.flushCache();
+      this.documentMerger.cache.flushCache();
     }
 
     this._configuration = newConfiguration;

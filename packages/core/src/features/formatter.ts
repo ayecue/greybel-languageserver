@@ -47,7 +47,7 @@ export function activate(context: IContext) {
 
       const textRange: Range = {
         start: { line: 0, character: 0 },
-        end: activeDocument.document.end
+        end: activeDocument.parsedPayload.end
       };
 
       return [

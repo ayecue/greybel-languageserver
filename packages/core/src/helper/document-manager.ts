@@ -1,370 +1,20 @@
 import EventEmitter from 'events';
 import { ASTChunkGreyScript, Parser } from 'greyscript-core';
 import { LRUCache as LRU } from 'lru-cache';
-import { ASTBaseBlockWithScope, ASTIdentifier } from 'miniscript-core';
 import { schedule } from 'non-blocking-schedule';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { URI, Utils } from 'vscode-uri';
 
-import {
-  DependencyRawLocation,
-  DependencyType,
-  IActiveDocument,
-  IActiveDocumentImport,
-  IActiveDocumentImportGraphNode,
-  IContext,
-  IDependencyLocation,
-  IDocumentManager,
-  parseDependencyLocation,
-  parseDependencyRawLocation
-} from '../types';
+import { IContext, IDocumentManager } from '../types';
+import { ActiveDocument } from './document-manager/active-document';
+import { DocumentScheduler } from './document-manager/document-scheduler';
 import typeManager from './type-manager';
 
-export interface ActiveDocumentOptions {
-  documentManager: DocumentManager;
-  content: string;
-  textDocument: TextDocument;
-  document: ASTBaseBlockWithScope | null;
-  errors: Error[];
-}
-
-export class DocumentURIBuilder {
-  readonly workspaceFolderUri: URI | null;
-  readonly rootPath: URI;
-
-  static async fromTextDocument(
-    textDocument: TextDocument,
-    context: IContext
-  ): Promise<DocumentURIBuilder> {
-    const textDocumentUri = URI.parse(textDocument.uri);
-    const workspaceFolderUri =
-      await context.fs.getWorkspaceFolderUri(textDocumentUri);
-
-    return new DocumentURIBuilder(
-      Utils.joinPath(textDocumentUri, '..'),
-      workspaceFolderUri
-    );
-  }
-
-  constructor(rootPath: URI, workspaceFolderUri: URI = null) {
-    this.workspaceFolderUri = workspaceFolderUri;
-    this.rootPath = rootPath;
-  }
-
-  private getFromWorkspaceFolder(path: string): string {
-    if (this.workspaceFolderUri == null) {
-      console.warn(
-        'Workspace folders are not available. Falling back to only relative paths.'
-      );
-      return Utils.joinPath(this.rootPath, path).toString();
-    }
-
-    return Utils.joinPath(this.workspaceFolderUri, path).toString();
-  }
-
-  private getFromRootPath(path: string): string {
-    return Utils.joinPath(this.rootPath, path).toString();
-  }
-
-  private getAlternativePathsWithContext(
-    path: string,
-    context: IContext
-  ): string[] {
-    if (path.startsWith('/')) {
-      return context.getConfiguration().fileExtensions.map((ext) => {
-        return this.getFromWorkspaceFolder(`${path}.${ext}`);
-      });
-    }
-    return context.getConfiguration().fileExtensions.map((ext) => {
-      return this.getFromRootPath(`${path}.${ext}`);
-    });
-  }
-
-  private getOriginalPath(path: string): string {
-    if (path.startsWith('/')) {
-      return this.getFromWorkspaceFolder(path);
-    }
-    return this.getFromRootPath(path);
-  }
-
-  async getPathWithContext(
-    path: string,
-    context: IContext
-  ): Promise<string | null> {
-    return context.fs.findExistingPath(
-      this.getOriginalPath(path),
-      ...this.getAlternativePathsWithContext(path, context)
-    );
-  }
-}
-
-export class ActiveDocument implements IActiveDocument {
-  documentManager: DocumentManager;
-  content: string;
-  textDocument: TextDocument;
-  document: ASTBaseBlockWithScope | null;
-  errors: Error[];
-
-  private dependencies?: IDependencyLocation[];
-
-  constructor(options: ActiveDocumentOptions) {
-    this.documentManager = options.documentManager;
-    this.content = options.content;
-    this.textDocument = options.textDocument;
-    this.document = options.document;
-    this.errors = options.errors;
-  }
-
-  getDirectory(): URI {
-    return Utils.joinPath(URI.parse(this.textDocument.uri), '..');
-  }
-
-  async getNativeImportUris(
-    workspaceFolderUri: URI = null
-  ): Promise<DependencyRawLocation[]> {
-    if (this.document == null) {
-      return [];
-    }
-
-    const rootChunk = this.document as ASTChunkGreyScript;
-    const rootPath = this.getDirectory();
-    const builder = new DocumentURIBuilder(rootPath, workspaceFolderUri);
-    const context = this.documentManager.context;
-    const imports = await Promise.all(
-      rootChunk.nativeImports
-        .filter((nativeImport) => nativeImport.directory && nativeImport.eval)
-        .map(async (nativeImport) => {
-          const path = await builder.getPathWithContext(
-            nativeImport.directory,
-            context
-          );
-
-          if (path == null) {
-            return null;
-          }
-
-          return parseDependencyLocation({
-            type: DependencyType.NativeImport,
-            location: path
-          });
-        })
-    );
-
-    return imports.filter((path) => path != null);
-  }
-
-  async getImportUris(
-    workspaceFolderUri: URI = null
-  ): Promise<DependencyRawLocation[]> {
-    if (this.document == null) {
-      return [];
-    }
-
-    const rootChunk = this.document as ASTChunkGreyScript;
-    const rootPath = this.getDirectory();
-    const context = this.documentManager.context;
-    const builder = new DocumentURIBuilder(rootPath, workspaceFolderUri);
-
-    const paths = await Promise.all([
-      ...rootChunk.imports
-        .filter((nonNativeImport) => nonNativeImport.path)
-        .map(async (nonNativeImport) => {
-          const path = await builder.getPathWithContext(
-            nonNativeImport.path,
-            context
-          );
-
-          if (path == null) {
-            return null;
-          }
-
-          return parseDependencyLocation({
-            type: DependencyType.Import,
-            location: path,
-            args: [(nonNativeImport.name as ASTIdentifier)?.name]
-          });
-        })
-    ]);
-
-    return paths.filter((path) => path != null);
-  }
-
-  async getIncludeUris(
-    workspaceFolderUri: URI = null
-  ): Promise<DependencyRawLocation[]> {
-    if (this.document == null) {
-      return [];
-    }
-
-    const rootChunk = this.document as ASTChunkGreyScript;
-    const rootPath = this.getDirectory();
-    const context = this.documentManager.context;
-    const builder = new DocumentURIBuilder(rootPath, workspaceFolderUri);
-
-    const paths = await Promise.all([
-      ...rootChunk.includes
-        .filter((includeImport) => includeImport.path)
-        .map(async (includeImport) => {
-          const path = await builder.getPathWithContext(
-            includeImport.path,
-            context
-          );
-
-          if (path == null) {
-            return null;
-          }
-
-          return parseDependencyLocation({
-            type: DependencyType.Include,
-            location: path
-          });
-        })
-    ]);
-
-    return paths.filter((path) => path != null);
-  }
-
-  async getDependencies(): Promise<IDependencyLocation[]> {
-    if (this.document == null) {
-      return [];
-    }
-
-    if (this.dependencies) {
-      return this.dependencies;
-    }
-
-    const workspacePathUri =
-      await this.documentManager.context.fs.getWorkspaceFolderUri(
-        URI.parse(this.textDocument.uri)
-      );
-    const [nativeImports, imports, includes] = await Promise.all([
-      this.getNativeImportUris(workspacePathUri),
-      this.getImportUris(workspacePathUri),
-      this.getIncludeUris(workspacePathUri)
-    ]);
-    const dependencies: Set<string> = new Set([
-      ...nativeImports,
-      ...imports,
-      ...includes
-    ]);
-
-    this.dependencies = Array.from(dependencies).map(
-      parseDependencyRawLocation
-    );
-
-    return this.dependencies;
-  }
-
-  async getImports(nested: boolean = true): Promise<IActiveDocumentImport[]> {
-    if (this.document == null) {
-      return [];
-    }
-
-    const imports: IActiveDocumentImport[] = [];
-    const visited: Set<string> = new Set([this.textDocument.uri]);
-    const traverse = async (rootResult: ActiveDocument) => {
-      const dependencies = await rootResult.getDependencies();
-
-      for (const dependency of dependencies) {
-        if (visited.has(dependency.location)) continue;
-
-        const item = await this.documentManager.open(dependency.location);
-
-        visited.add(dependency.location);
-
-        if (item === null) continue;
-
-        imports.push({
-          document: item,
-          location: dependency
-        });
-
-        if (item.document !== null && nested) {
-          await traverse(item);
-        }
-      }
-    };
-
-    await traverse(this);
-
-    return imports;
-  }
-
-  async getImportsGraph(): Promise<IActiveDocumentImportGraphNode> {
-    const initialNode: IActiveDocumentImportGraphNode = {
-      item: {
-        document: this,
-        location: {
-          type: DependencyType.Root,
-          location: this.textDocument.uri
-        }
-      },
-      children: []
-    };
-
-    if (this.document == null) {
-      return initialNode;
-    }
-
-    const visited: Map<string, IActiveDocumentImportGraphNode> = new Map([
-      [this.textDocument.uri, initialNode]
-    ]);
-    const traverse = async (
-      rootResult: ActiveDocument,
-      rootNode: IActiveDocumentImportGraphNode
-    ) => {
-      const dependencies = await rootResult.getDependencies();
-
-      for (const dependency of dependencies) {
-        const existingNode = visited.get(dependency.location);
-
-        if (existingNode != null) {
-          rootNode.children.push(existingNode);
-          continue;
-        }
-
-        const item = await this.documentManager.open(dependency.location);
-
-        if (item === null) continue;
-
-        const childNode: IActiveDocumentImportGraphNode = {
-          item: {
-            document: item,
-            location: dependency
-          },
-          children: []
-        };
-
-        visited.set(dependency.location, childNode);
-        rootNode.children.push(childNode);
-
-        if (item.document !== null) {
-          await traverse(item, childNode);
-        }
-      }
-    };
-
-    await traverse(this, initialNode);
-
-    return initialNode;
-  }
-}
-
-export interface ScheduledItem {
-  document: TextDocument;
-  createdAt: number;
-}
-
-export const PROCESSING_TIMEOUT = 100;
-
 export class DocumentManager extends EventEmitter implements IDocumentManager {
-  readonly results: LRU<string, ActiveDocument>;
+  readonly documents: LRU<string, ActiveDocument>;
 
-  private _timer: NodeJS.Timeout;
   private _context: IContext | null;
-  private scheduledItems: Map<string, ScheduledItem>;
-  private tickRef: () => void;
-  private readonly processingTimeout: number;
+  private _documentScheduler: DocumentScheduler;
+  private _pendingFiles: Map<string, Promise<TextDocument | null>>;
 
   get context() {
     return this._context;
@@ -375,109 +25,109 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
     return this;
   }
 
-  constructor(processingTimeout: number = PROCESSING_TIMEOUT) {
+  constructor(processingTimeout?: number) {
     super();
     this._context = null;
-    this._timer = null;
-    this.results = new LRU({
+    this._pendingFiles = new Map();
+    this.documents = new LRU({
       ttl: 1000 * 60 * 20,
       ttlAutopurge: true
     });
-    this.scheduledItems = new Map();
-    this.tickRef = this.tick.bind(this);
-    this.processingTimeout = processingTimeout;
+    this._documentScheduler = new DocumentScheduler(processingTimeout);
+
+    this.initEvents();
   }
 
-  private tick() {
-    if (this.scheduledItems.size === 0) {
-      this._timer = null;
-      return;
-    }
-
-    const currentTime = Date.now();
-    const items = Array.from(this.scheduledItems.values());
-
-    for (let index = 0; index < items.length; index++) {
-      const item = items[index];
-      if (currentTime - item.createdAt > this.processingTimeout) {
-        schedule(() => this.refresh(item.document));
-      }
-    }
-
-    this._timer = setTimeout(this.tickRef, 0);
+  private initEvents() {
+    this._documentScheduler.on('process', (document: TextDocument) => {
+      this.processAndPersist(document);
+    });
   }
 
-  refresh(document: TextDocument): ActiveDocument {
+  private processAndPersist(document: TextDocument): ActiveDocument {
     const key = document.uri;
 
-    if (!this.scheduledItems.has(key) && this.results.has(key)) {
-      return this.results.get(key)!;
-    }
-
-    const result = this.create(document);
-    this.results.set(key, result);
-    this.emit('parsed', document, result);
-    this.scheduledItems.delete(key);
+    this._documentScheduler.cancel(document);
+    const result = this.process(document);
+    this.documents.set(key, result);
+    this.emit('processed', document, result);
 
     return result;
   }
 
-  private create(document: TextDocument): ActiveDocument {
-    const content = document.getText();
+  private process(textDocument: TextDocument): ActiveDocument {
+    this._context.documentMerger.cache.flushCacheKey(textDocument.uri);
+
+    const content = textDocument.getText();
     const parser = new Parser(content, {
       unsafe: true
     });
-    const chunk = parser.parseChunk() as ASTChunkGreyScript;
-
-    this._context.documentMerger.flushCacheKey(document.uri);
-
-    typeManager.analyze(document.uri, chunk);
+    const parsedPayload = parser.parseChunk() as ASTChunkGreyScript;
+    const typeDocument = typeManager.analyze(textDocument.uri, parsedPayload);
 
     return new ActiveDocument({
-      documentManager: this,
-      content,
-      textDocument: document,
-      document: chunk,
+      context: this._context,
+      version: textDocument.version,
+      textDocument,
+      typeDocument,
+      parsedPayload,
       errors: [...parser.lexer.errors, ...parser.errors]
     });
   }
 
-  schedule(document: TextDocument): boolean {
-    const fileUri = document.uri;
-    const content = document.getText();
-
-    if (this.results.get(fileUri)?.content === content) {
+  schedule(textDocument: TextDocument): boolean {
+    if (
+      this.documents.get(textDocument.uri)?.version === textDocument.version
+    ) {
       return false;
     }
 
-    this.scheduledItems.set(fileUri, {
-      document,
-      createdAt: Date.now()
-    });
-
-    if (this._timer === null) {
-      this._timer = setTimeout(this.tickRef, 0);
-    }
-
-    return true;
+    return this._documentScheduler.schedule(textDocument);
   }
 
-  async open(target: string): Promise<ActiveDocument | null> {
+  private async open(target: string): Promise<ActiveDocument | null> {
     try {
-      const textDocument = await this.context.fs.getTextDocument(target);
+      const pendingFile = this._pendingFiles.get(target);
+      let textDocument: TextDocument;
+
+      if (pendingFile) {
+        textDocument = await pendingFile;
+      } else {
+        const defer = this.context.fs.getTextDocument(target);
+        this._pendingFiles.set(target, defer);
+        textDocument = await defer;
+      }
 
       if (textDocument == null) {
         return null;
       }
 
-      return this.get(textDocument);
+      return (
+        this.documents.get(textDocument.uri) ||
+        this.processAndPersist(textDocument)
+      );
     } catch (err) {
       return null;
+    } finally {
+      this._pendingFiles.delete(target);
     }
   }
 
-  get(document: TextDocument): ActiveDocument {
-    return this.results.get(document.uri) || this.refresh(document);
+  async getOrOpen(target: string): Promise<ActiveDocument | null> {
+    const document = this.documents.get(target);
+
+    if (document) {
+      return document;
+    }
+
+    return this.open(target);
+  }
+
+  get(textDocument: TextDocument): ActiveDocument {
+    return (
+      this.documents.get(textDocument.uri) ||
+      this.processAndPersist(textDocument)
+    );
   }
 
   getLatest(
@@ -486,29 +136,30 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
   ): Promise<ActiveDocument> {
     return new Promise((resolve) => {
       schedule(() => {
-        if (!this.scheduledItems.has(document.uri))
+        if (!this._documentScheduler.isScheduled(document)) {
           return resolve(this.get(document));
+        }
 
         const onTimeout = () => {
-          this.removeListener('parsed', onParse);
+          this.removeListener('processed', onProcessed);
           resolve(this.get(document));
         };
-        const onParse = (evDocument: TextDocument) => {
+        const onProcessed = (evDocument: TextDocument) => {
           if (evDocument.uri === document.uri) {
-            this.removeListener('parsed', onParse);
+            this.removeListener('processed', onProcessed);
             clearTimeout(timer);
             resolve(this.get(document));
           }
         };
         const timer = setTimeout(onTimeout, timeout);
 
-        this.addListener('parsed', onParse);
+        this.addListener('processed', onProcessed);
       });
     });
   }
 
   clear(document: TextDocument): void {
-    this.results.delete(document.uri);
+    this.documents.delete(document.uri);
     this.emit('cleared', document);
   }
 }

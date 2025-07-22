@@ -55,7 +55,7 @@ export function activate(context: IContext) {
       // waiting for changes
       const activeDocument = await context.documentManager.getLatest(document);
 
-      const helper = new LookupHelper(activeDocument.textDocument, context);
+      const helper = new LookupHelper(activeDocument, context);
       const astResult = await helper.lookupAST(params.position);
       const completionListBuilder = new CompletionListBuilder();
 

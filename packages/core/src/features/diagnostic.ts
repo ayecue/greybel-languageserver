@@ -35,8 +35,8 @@ async function lookupErrors(
 
     return {
       range: {
-        start: activeDocument.document.start,
-        end: activeDocument.document.end
+        start: activeDocument.parsedPayload.start,
+        end: activeDocument.parsedPayload.end
       },
       message: err.message,
       severity: 1 // Error

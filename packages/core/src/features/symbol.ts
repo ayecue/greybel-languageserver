@@ -5,26 +5,22 @@ import {
 } from 'miniscript-core';
 import {
   ASTDefinitionItem,
-  createExpressionId,
-  Document as MSDocument
+  createExpressionId
 } from 'miniscript-type-analyzer';
 import type {
   DocumentSymbolParams,
   SymbolInformation,
   WorkspaceSymbolParams
 } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { getSymbolItemKind } from '../helper/kind';
-import typeManager from '../helper/type-manager';
-import { IContext } from '../types';
+import { IActiveDocument, IContext } from '../types';
 
 const handleItem = (
-  document: TextDocument,
-  typeDoc: MSDocument,
+  document: IActiveDocument,
   item: ASTAssignmentStatement | ASTForGenericStatement
 ): SymbolInformation | null => {
-  const entity = typeDoc.resolveNamespace(item.variable, true);
+  const entity = document.typeDocument.resolveNamespace(item.variable, true);
 
   if (entity == null) {
     return null;
@@ -46,37 +42,36 @@ const handleItem = (
     name: label,
     kind,
     location: {
-      uri: document.uri,
+      uri: document.textDocument.uri,
       range: { start, end }
     }
   };
 };
 
 const handleDefinitionItem = (
-  document: TextDocument,
-  typeDoc: MSDocument,
+  document: IActiveDocument,
   item: ASTDefinitionItem
 ): SymbolInformation | null => {
   switch (item.node.type) {
     case ASTType.AssignmentStatement:
-      return handleItem(document, typeDoc, item.node as ASTAssignmentStatement);
+      return handleItem(document, item.node as ASTAssignmentStatement);
     case ASTType.ForGenericStatement:
-      return handleItem(document, typeDoc, item.node as ASTForGenericStatement);
+      return handleItem(document, item.node as ASTForGenericStatement);
     default:
       return null;
   }
 };
 
 const findAllAssignments = (
-  document: TextDocument,
+  document: IActiveDocument,
   query: string
 ): SymbolInformation[] => {
-  const typeDoc = typeManager.get(document.uri);
+  const typeDoc = document.typeDocument;
   const defs = typeDoc.resolveAllAssignmentsWithQuery(query);
   const result: SymbolInformation[] = [];
 
   for (const defItem of defs) {
-    const symbol = handleDefinitionItem(document, typeDoc, defItem);
+    const symbol = handleDefinitionItem(document, defItem);
 
     if (symbol != null) {
       result.push(symbol);
@@ -94,13 +89,13 @@ export function activate(context: IContext) {
       return;
     }
 
-    const parseResult = await context.documentManager.getLatest(document);
+    const parseResult = context.documentManager.get(document);
 
-    if (!parseResult.document) {
+    if (!parseResult.parsedPayload) {
       return;
     }
 
-    return findAllAssignments(document, '');
+    return findAllAssignments(parseResult, '');
   });
 
   context.connection.onWorkspaceSymbol((params: WorkspaceSymbolParams) => {
@@ -109,11 +104,11 @@ export function activate(context: IContext) {
     for (const document of context.fs.getAllTextDocuments()) {
       const parseResult = context.documentManager.get(document);
 
-      if (!parseResult.document) {
+      if (!parseResult.parsedPayload) {
         continue;
       }
 
-      result.push(...findAllAssignments(document, params.query));
+      result.push(...findAllAssignments(parseResult, params.query));
     }
 
     return result;

@@ -71,7 +71,7 @@ export function activate(context: IContext) {
     }
 
     const parseResult = await context.documentManager.getLatest(textDocument);
-    const chunk = parseResult.document as ASTChunk;
+    const chunk = parseResult.parsedPayload as ASTChunk;
     const allAvailableStrings = chunk.literals.filter(
       (literal: ASTBase) =>
         (literal as ASTLiteral).type === ASTType.StringLiteral

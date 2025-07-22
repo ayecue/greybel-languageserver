@@ -16,9 +16,9 @@ import {
   isValidIdentifierLiteral
 } from 'miniscript-type-analyzer';
 import { ASTDefinitionItem } from 'miniscript-type-analyzer/dist/types/object';
-import { Position, TextDocument } from 'vscode-languageserver-textdocument';
+import { Position } from 'vscode-languageserver-textdocument';
 
-import { IContext } from '../types';
+import { IActiveDocument, IContext } from '../types';
 import * as ASTScraper from './ast-scraper';
 import { lookupBase } from './ast-utils';
 
@@ -30,12 +30,12 @@ export interface LookupASTResult {
 }
 
 export class LookupHelper {
-  readonly document: TextDocument;
+  readonly document: IActiveDocument;
   readonly context: IContext;
 
   private mergedTypeMap: TypeDocument;
 
-  constructor(document: TextDocument, context: IContext) {
+  constructor(document: IActiveDocument, context: IContext) {
     this.document = document;
     this.context = context;
 
@@ -188,10 +188,7 @@ export class LookupHelper {
 
   async lookupAST(position: Position): Promise<LookupASTResult | null> {
     const me = this;
-    const activeDocument = await this.context.documentManager.getLatest(
-      me.document
-    );
-    const chunk = activeDocument.document as ASTChunk;
+    const chunk = me.document.parsedPayload as ASTChunk;
     const lineItems = chunk.lines[position.line + 1];
 
     if (!lineItems) {

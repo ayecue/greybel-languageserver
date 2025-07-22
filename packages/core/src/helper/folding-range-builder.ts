@@ -45,6 +45,6 @@ export function buildFoldingRanges(item: IActiveDocument): FoldingRange[] {
 
     return null;
   });
-  walker.visit(item.document);
+  walker.visit(item.parsedPayload);
   return ranges;
 }
