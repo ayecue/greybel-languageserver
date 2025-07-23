@@ -15,11 +15,12 @@ export class FileSystem extends EventEmitter implements IFileSystem {
   private _context: IContext;
   private _tempTextDocumentCache: LRUCache<string, TextDocument>;
   private _textDocumentManager: TextDocuments<TextDocument>;
-  private _workspace: ReturnType<typeof createConnection>['workspace'] | null;
+  private _connection: ReturnType<typeof createConnection> | null;
 
   constructor(context: IContext) {
     super();
 
+    this._connection = null;
     this._context = context;
     this._textDocumentManager = new TextDocuments(TextDocument);
     this._tempTextDocumentCache = new LRUCache({
@@ -30,8 +31,8 @@ export class FileSystem extends EventEmitter implements IFileSystem {
 
   async getWorkspaceFolderUris(): Promise<URI[]> {
     if (!this._context.features.workspaceFolder) return [];
-    if (this._workspace == null) return [];
-    const result = await this._workspace.getWorkspaceFolders();
+    if (this._connection?.workspace == null) return [];
+    const result = await this._connection.workspace.getWorkspaceFolders();
     if (result == null) return [];
     return Array.from(new Set(result.map((it) => it.uri))).map((it) =>
       URI.parse(it)
@@ -109,6 +110,9 @@ export class FileSystem extends EventEmitter implements IFileSystem {
         encoding: 'utf-8'
       });
       tempDoc = TextDocument.create(targetUri, LanguageId, 0, content);
+      this._connection?.sendNotification('textDocument/didOpen', {
+        textDocument: tempDoc
+      });
     } catch (err) { }
 
     this._tempTextDocumentCache.set(targetUri, tempDoc);
@@ -130,7 +134,7 @@ export class FileSystem extends EventEmitter implements IFileSystem {
   }
 
   listen(connection: ReturnType<typeof createConnection>) {
-    this._workspace = connection.workspace;
+    this._connection = connection;
     this._textDocumentManager.listen(connection);
     this._textDocumentManager.onDidOpen(
       (event: TextDocumentChangeEvent<TextDocument>) => {
