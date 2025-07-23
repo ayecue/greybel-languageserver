@@ -71,8 +71,8 @@
   },
   "peerDependencies": {
     "greyscript-core": ">=2.5.5",
-    "greyscript-meta": ">=4.3.0",
-    "greyscript-transpiler": ">=1.6.5",
+    "greyscript-meta": ">=4.3.2",
+    "greyscript-transpiler": ">=1.8.2",
     "miniscript-type-analyzer": ">=0.21.0"
   },
   "dependencies": {
