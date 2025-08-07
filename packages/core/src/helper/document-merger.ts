@@ -1,4 +1,4 @@
-import { Document as TypeDocument } from 'miniscript-type-analyzer';
+import { Document as TypeDocument } from 'greybel-type-analyzer';
 
 import {
   IActiveDocument,

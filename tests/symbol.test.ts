@@ -8,7 +8,7 @@ async function executeDocumentSymbolProvider(
 ) {
   await activate(docUri);
 
-  return await vscode.commands.executeCommand<vscode.SymbolInformation[]>(
+  return await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
     'vscode.executeDocumentSymbolProvider',
     docUri
   );
@@ -19,8 +19,11 @@ suite('DocumentSymbolProvider', () => {
     test('should provide locations', async () => {
       const documentUri = getDocUri('default.src');
       const result = await executeDocumentSymbolProvider(documentUri);
+      const allSymbols = result.flatMap(symbol => {
+        return symbol.children ? [symbol, ...symbol.children] : [symbol];
+      });
 
-      assert.strictEqual(result.length, 10);
+      assert.strictEqual(allSymbols.length, 10);
     });
   });
 
@@ -28,8 +31,11 @@ suite('DocumentSymbolProvider', () => {
     test('should provide locations', async () => {
       const documentUri = getDocUri('class.src');
       const result = await executeDocumentSymbolProvider(documentUri);
+      const allSymbols = result.flatMap(symbol => {
+        return symbol.children ? [symbol, ...symbol.children] : [symbol];
+      });
 
-      assert.strictEqual(result.length, 93);
+      assert.strictEqual(allSymbols.length, 65);
     });
   });
 
@@ -38,7 +44,7 @@ suite('DocumentSymbolProvider', () => {
       const documentUri = getDocUri('invalid-chunk.src');
       const result = await executeDocumentSymbolProvider(documentUri);
 
-      assert.strictEqual(result.length, 2);
+      assert.strictEqual(result, undefined);
     });
   });
 });

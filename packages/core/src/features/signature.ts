@@ -4,6 +4,7 @@ import type { SignatureHelp, SignatureHelpParams } from 'vscode-languageserver';
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { createSignatureInfo } from '../helper/tooltip';
 import { IContext } from '../types';
+import { isFunctionType, isUnionType } from 'greybel-type-analyzer';
 
 const getClosestCallExpression = (
   astResult: LookupASTResult
@@ -51,12 +52,18 @@ export function activate(context: IContext) {
       return;
     }
 
-    const item = await helper.lookupTypeInfo({
+    const entity = await helper.lookupTypeInfo({
       closest: closestCallExpr.base,
       outer: closest.scope ? [closest.scope] : []
     });
 
-    if (!item || !item.isCallable()) {
+    if (
+      !entity ||
+      (
+        !isFunctionType(entity.item) &&
+        (!isUnionType(entity.item) || !entity.item.variants.some(isFunctionType))
+      )
+    ) {
       return;
     }
 
@@ -78,7 +85,7 @@ export function activate(context: IContext) {
       activeSignature: 0
     };
 
-    signatureHelp.signatures.push(...createSignatureInfo(item));
+    signatureHelp.signatures.push(...createSignatureInfo(entity));
 
     return signatureHelp;
   });

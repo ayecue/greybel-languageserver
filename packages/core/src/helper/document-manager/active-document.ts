@@ -1,6 +1,6 @@
 import { ASTChunkGreyScript } from 'greyscript-core';
 import { ASTBaseBlockWithScope, ASTIdentifier } from 'miniscript-core';
-import { Document as TypeDocument } from 'miniscript-type-analyzer';
+import { Document as TypeDocument } from 'greybel-type-analyzer';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 

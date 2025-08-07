@@ -1,10 +1,14 @@
-import { ASTChunkGreyScript } from 'greyscript-core';
 import { greyscriptMeta } from 'greyscript-meta';
-import { ASTPosition } from 'miniscript-core';
+import { SignatureDefinitionBaseType } from 'meta-utils';
 import {
+  TypeManager,
   Document as TypeDocument,
-  TypeManager
-} from 'miniscript-type-analyzer';
+  ITypeStorage,
+  IDocument,
+  persistTypeInNativeFunction,
+  MapType,
+  EntityInfo
+} from 'greybel-type-analyzer';
 
 import {
   DependencyType,
@@ -19,42 +23,35 @@ export type ImportWithNamespace = {
 };
 
 const typeManager = new TypeManager({
-  container: greyscriptMeta
+  container: greyscriptMeta,
+  modifyTypeStorage: (document: IDocument, globalTypeStorage: ITypeStorage) => {
+    const generalInterface = document.typeStorage.getTypeById(
+      SignatureDefinitionBaseType.General
+    );
+    
+    if (generalInterface.hasProperty('get_custom_object')) {
+      return;
+    }
+
+    const gcoMap = MapType.createDefault(
+      document.typeStorage,
+      document,
+      document.globals
+    );
+    const proxyGCOFn = persistTypeInNativeFunction(
+      SignatureDefinitionBaseType.General,
+      'get_custom_object',
+      gcoMap,
+      document,
+      globalTypeStorage
+    );
+
+    generalInterface.setProperty('get_custom_object', new EntityInfo('get_custom_object', proxyGCOFn));
+    document.typeStorage.memory.set('$$get_custom_object', gcoMap);
+  }
 });
 
 export default typeManager;
-
-export function createTypeDocumentWithNamespaces(
-  origin: TypeDocument,
-  items: ImportWithNamespace[]
-) {
-  const typeDoc = new TypeDocument({
-    source: origin.source,
-    // @ts-expect-error
-    container: typeManager._container,
-    root: new ASTChunkGreyScript({
-      start: new ASTPosition(0, 0),
-      end: new ASTPosition(0, 0),
-      range: [0, 0]
-    })
-  });
-
-  typeDoc.analyze();
-
-  items.forEach((item) => {
-    const entity = item.typeDoc
-      .getRootScopeContext()
-      .scope.resolveNamespace('module', true)
-      ?.resolveProperty('exports', true);
-
-    if (entity == null) return;
-
-    const rootScope = typeDoc.getRootScopeContext().scope;
-    rootScope.setProperty(item.namespace, entity, true);
-  });
-
-  return typeDoc;
-}
 
 export function aggregateImportsWithNamespaceFromLocations(
   dependencyLocation: IDependencyLocation[],

@@ -1,4 +1,3 @@
-import { SignatureDefinitionBaseType } from 'meta-utils';
 import {
   ASTBase,
   ASTBaseBlockWithScope,
@@ -9,18 +8,17 @@ import {
 } from 'miniscript-core';
 import {
   CompletionItem,
-  CompletionItemKind,
   Document as TypeDocument,
-  IEntity,
-  injectIdentifers,
-  isValidIdentifierLiteral
-} from 'miniscript-type-analyzer';
-import { ASTDefinitionItem } from 'miniscript-type-analyzer/dist/types/object';
+  IResolveNamespaceResult,
+  IType
+} from 'greybel-type-analyzer';
 import { Position } from 'vscode-languageserver-textdocument';
 
 import { IActiveDocument, IContext } from '../types';
 import * as ASTScraper from './ast-scraper';
 import { lookupBase } from './ast-utils';
+import { isValidIdentifierLiteral } from './is-valid-identifier-literal';
+import { SymbolInfo } from 'greybel-type-analyzer';
 
 export type LookupOuter = ASTBase[];
 
@@ -55,39 +53,38 @@ export class LookupHelper {
   async findAllAssignmentsOfIdentifier(
     identifier: string,
     root: ASTBaseBlockWithScope
-  ): Promise<ASTDefinitionItem[]> {
+  ): Promise<SymbolInfo[]> {
     const typeDoc = await this.getTypeMap();
 
     if (typeDoc == null) {
       return [];
     }
 
-    const context = typeDoc.getScopeContext(root);
+    const context = typeDoc.scopeRefMapping.get(root);
 
     if (context == null) {
       return [];
     }
 
-    return context.aggregator.resolveAvailableAssignmentsWithQuery(identifier);
+    return context.scope.resolveAllAvailableWithQuery(identifier);
   }
 
   async findAllAssignmentsOfItem(
-    item: ASTBase,
-    root: ASTBaseBlockWithScope
-  ): Promise<ASTDefinitionItem[]> {
+    item: ASTBase
+  ): Promise<IType> {
     const typeDoc = await this.getTypeMap();
 
     if (typeDoc == null) {
-      return [];
+      return null;
     }
 
-    const context = typeDoc.getScopeContext(root);
+    const result = typeDoc.resolveNamespace(item, false);
 
-    if (context == null) {
-      return [];
+    if (result == null) {
+      return null;
     }
 
-    return context.aggregator.resolveAvailableAssignments(item);
+    return result.item;
   }
 
   async findAllAvailableIdentifierInRoot(): Promise<
@@ -99,7 +96,15 @@ export class LookupHelper {
       return new Map();
     }
 
-    return typeDoc.getRootScopeContext().scope.getAvailableIdentifier();
+    return typeDoc.globals.getAllProperties().reduce((result, it) => {
+      const sources = it.type.getSource();
+
+      result.set(it.name, {
+        kind: it.kind,
+        line: sources && sources.length > 0 ? sources[0].start.line - 1 : -1
+      });
+      return result;
+    }, new Map<string, CompletionItem>());
   }
 
   async findAllAvailableIdentifier(
@@ -111,13 +116,21 @@ export class LookupHelper {
       return new Map();
     }
 
-    const context = typeDoc.getScopeContext(root);
+    const context = typeDoc.scopeRefMapping.get(root);
 
     if (context == null) {
       return new Map();
     }
 
-    return context.scope.getAvailableIdentifier();
+    return context.scope.getAllProperties().reduce((result, it) => {
+      const sources = it.type.getSource();
+
+      result.set(it.name, {
+        kind: it.kind,
+        line: sources && sources.length > 0 ? sources[0].start.line - 1 : -1
+      });
+      return result;
+    }, new Map<string, CompletionItem>());
   }
 
   async findAllAvailableIdentifierRelatedToPosition(
@@ -130,58 +143,48 @@ export class LookupHelper {
       return result;
     }
 
-    for (const assignment of typeDoc.container.getAvailableIdentifier(
-      SignatureDefinitionBaseType.General
-    )) {
-      result.set(...assignment);
+    const scopeContext = typeDoc.scopeRefMapping.get(item.scope);
+    const properties = scopeContext.scope.getAllProperties();
+    const alwaysVisibleProperties = [];
+    const locationDependendProperties = [];
+
+    for (let index = 0; index < properties.length; index++) {
+      const property = properties[index];
+      const sources = property.type.getSource();
+      
+      if (
+        property.type.document != null &&
+        property.type.document.name === typeDoc.name &&
+        sources != null &&
+        sources.length > 0
+      ) {
+        locationDependendProperties.push(property);
+      } else {
+        alwaysVisibleProperties.push(property);
+      }
     }
-
-    const scopeContext = typeDoc.getScopeContext(item.scope);
-
-    if (scopeContext == null) {
-      return result;
-    }
-
-    if (scopeContext.scope.isSelfAvailable()) {
-      result.set('self', {
-        kind: CompletionItemKind.Constant,
+    
+    for (let index = 0; index < alwaysVisibleProperties.length; index++) {
+      const property = alwaysVisibleProperties[index];
+      result.set(property.name, {
+        kind: property.kind,
         line: -1
       });
     }
 
-    if (scopeContext.scope.isSuperAvailable()) {
-      result.set('super', {
-        kind: CompletionItemKind.Constant,
-        line: -1
+    locationDependendProperties
+      .sort((a, b) => a.type.getSource()[0].start.line - b.type.getSource()[0].start.line);
+
+    for (let index = 0; index < locationDependendProperties.length; index++) {
+      const property = locationDependendProperties[index];
+      const source = property.type.getSource()[0];
+
+      if (source.start.line >= item.end!.line) break;
+      result.set(property.name, {
+        kind: property.kind,
+        line: source.start.line - 1
       });
     }
-
-    const localIdentifer = new Map<string, CompletionItem>();
-    injectIdentifers(localIdentifer, scopeContext.scope);
-
-    const assignments = Array.from(localIdentifer.entries())
-      .map(([key, item]) => {
-        return {
-          identifier: key,
-          ...item
-        };
-      })
-      .sort((a, b) => a.line - b.line);
-
-    for (let index = 0; index < assignments.length; index++) {
-      const assignment = assignments[index];
-
-      if (assignment.line >= item.end!.line) break;
-      result.set(assignment.identifier, {
-        kind: assignment.kind,
-        line: assignment.line
-      });
-    }
-
-    if (scopeContext.scope.locals !== scopeContext.scope.globals)
-      injectIdentifers(result, scopeContext.scope.globals);
-    if (scopeContext.scope.outer)
-      injectIdentifers(result, scopeContext.scope.outer);
 
     return result;
   }
@@ -244,7 +247,7 @@ export class LookupHelper {
     return null;
   }
 
-  async lookupBasePath(item: ASTBase): Promise<IEntity | null> {
+  async lookupBasePath(item: ASTBase): Promise<IResolveNamespaceResult | null> {
     const typeDoc = await this.getTypeMap();
 
     if (typeDoc === null) {
@@ -254,7 +257,7 @@ export class LookupHelper {
     const base = lookupBase(item);
 
     if (base) {
-      return typeDoc.resolveNamespace(base);
+      return typeDoc.resolveNamespace(base, true);
     }
 
     return null;
@@ -263,7 +266,7 @@ export class LookupHelper {
   async lookupTypeInfo({
     closest,
     outer
-  }: LookupASTResult): Promise<IEntity | null> {
+  }: LookupASTResult): Promise<IResolveNamespaceResult | null> {
     const typeDoc = await this.getTypeMap();
 
     if (typeDoc === null) {
@@ -276,19 +279,19 @@ export class LookupHelper {
       previous?.type === ASTType.MemberExpression &&
       closest === (previous as ASTMemberExpression).identifier
     ) {
-      return typeDoc.resolveType(previous, true);
+      return typeDoc.resolveNamespace(previous, false);
     } else if (
       previous?.type === ASTType.IndexExpression &&
       closest === (previous as ASTIndexExpression).index &&
       isValidIdentifierLiteral(closest)
     ) {
-      return typeDoc.resolveType(previous, true);
+      return typeDoc.resolveNamespace(previous, false);
     }
 
-    return typeDoc.resolveType(closest, true);
+    return typeDoc.resolveNamespace(closest, false);
   }
 
-  async lookupType(position: Position): Promise<IEntity | null> {
+  async lookupType(position: Position): Promise<IResolveNamespaceResult | null> {
     const me = this;
     const astResult = await me.lookupAST(position);
 

@@ -1,11 +1,11 @@
-import { IEntity } from 'miniscript-type-analyzer';
+import type { CompletionItem as GreybelCompletionItem } from 'greybel-type-analyzer';
 import type { CompletionItem } from 'vscode-languageserver';
 
 import { getCompletionItemKind } from './kind';
 
 export class CompletionListBuilder {
   private default: CompletionItem[];
-  private collection: ReturnType<IEntity['getAvailableIdentifier']>;
+  private collection: Map<string, GreybelCompletionItem>;
 
   constructor() {
     this.collection = new Map();
@@ -17,7 +17,7 @@ export class CompletionListBuilder {
   }
 
   addCollection(
-    collection: ReturnType<IEntity['getAvailableIdentifier']> | null
+    collection: Map<string, GreybelCompletionItem> | null
   ) {
     if (collection == null) return;
     this.collection = new Map([...this.collection, ...collection]);

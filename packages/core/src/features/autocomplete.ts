@@ -3,7 +3,7 @@ import {
   ASTIndexExpression,
   ASTMemberExpression
 } from 'miniscript-core';
-import { IEntity } from 'miniscript-type-analyzer';
+import { CompletionItem as GreybelCompletionItem } from 'greybel-type-analyzer';
 import type {
   CompletionItem,
   TextDocumentPositionParams
@@ -19,14 +19,22 @@ import { AVAILABLE_OPERATORS } from './autocomplete/operators';
 export const getPropertyCompletionList = async (
   helper: LookupHelper,
   item: ASTBase
-): Promise<ReturnType<IEntity['getAvailableIdentifier']>> => {
+): Promise<Map<string, GreybelCompletionItem>> => {
   const entity = await helper.lookupBasePath(item);
 
   if (entity === null) {
     return null;
   }
 
-  return entity.getAvailableIdentifier();
+  return entity.item.getAllProperties().reduce((result, it) => {
+    const sources = it.type.getSource();
+
+    result.set(it.name, {
+      kind: it.kind,
+      line: sources && sources.length > 0 ? sources[0].start.line - 1 : -1
+    });
+    return result;
+  }, new Map<string, GreybelCompletionItem>());
 };
 
 export const getDefaultCompletionList = (): CompletionItem[] => {

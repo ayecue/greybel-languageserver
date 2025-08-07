@@ -1,9 +1,9 @@
-import { Document as TypeDocument } from "miniscript-type-analyzer";
+import { Document as TypeDocument } from "greybel-type-analyzer";
 
 import { DependencyType, getAllDependencyLocationsFromGraph, IActiveDocument, IActiveDocumentImportGraphNode, IContext, IDocumentMerger, parseDependencyRawLocation } from "../../types";
 import { DocumentMergerCache } from "./document-merger-cache";
 import { DocumentGraphBuilder } from "../document-manager/document-graph-builder";
-import { aggregateImportsWithNamespaceFromGraph, createTypeDocumentWithNamespaces } from "../type-manager";
+import { aggregateImportsWithNamespaceFromGraph } from "../type-manager";
 
 export class DocumentDependencyMergerJob {
   private cache: DocumentMergerCache;
@@ -18,11 +18,19 @@ export class DocumentDependencyMergerJob {
     const namespacesOfImports = aggregateImportsWithNamespaceFromGraph(node, this.refs);
     const activeDocument = node.item.document;
     if (namespacesOfImports.length === 0) {
-      return activeDocument.typeDocument.merge(...externalTypeDocs);
+      return activeDocument.typeDocument.merge(
+        ...externalTypeDocs.map((it) => {
+          return { document: it };
+        })
+      );
     }
     return activeDocument.typeDocument.merge(
-      createTypeDocumentWithNamespaces(activeDocument.typeDocument, namespacesOfImports),
-      ...externalTypeDocs
+       ...namespacesOfImports.map((it) => {
+        return { document: it.typeDoc, namespaces: [{ exportFrom: 'module.exports', namespace: it.namespace }] }
+      }),
+      ...externalTypeDocs.map((it) => {
+        return { document: it };
+      })
     );
   }
 
@@ -62,13 +70,14 @@ export class DocumentDependencyMergerJob {
 
     for (let index = 0; index < node.children.length; index++) {
       const child = node.children[index];
-      if (child.item.location.type === DependencyType.Import) continue;
 
       const itemTypeDoc = this.process(
         child,
         context
       );
 
+      // Skip namespace imports to be added to externalTypeDocs, process needs to be called anyway though to ensure availability of the type document
+      if (child.item.location.type === DependencyType.Import) continue;
       if (itemTypeDoc === null) return;
       externalTypeDocs.push(itemTypeDoc);
     }

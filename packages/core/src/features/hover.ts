@@ -4,7 +4,6 @@ import {
 } from 'greybel-core';
 import { ASTImportCodeExpression, ASTType } from 'greyscript-core';
 import {
-  SignatureDefinitionBaseType,
   SignatureDefinitionTypeMeta
 } from 'meta-utils';
 import path from 'path';
@@ -14,8 +13,9 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentURIBuilder } from '../helper/document-manager/document-uri-builder';
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { MarkdownString } from '../helper/markdown-string';
-import { createHover, formatKind, formatTypes } from '../helper/tooltip';
+import { createHover, createTypeBody, formatKind, formatTypes } from '../helper/tooltip';
 import { IContext, LanguageId } from '../types';
+import { isFunctionType, isUnionType } from 'greybel-type-analyzer';
 
 export function activate(context: IContext) {
   async function generateImportCodeHover(
@@ -122,23 +122,20 @@ export function activate(context: IContext) {
       return;
     }
 
-    if (entity.isCallable()) {
+    if (isFunctionType(entity.item) || (isUnionType(entity.item) && entity.item.variants.some(isFunctionType))) {
       return createHover(entity);
     }
 
     const hoverText = new MarkdownString('');
-    const metaTypes = entity.toMeta().map(SignatureDefinitionTypeMeta.parse);
-    let label = `(${formatKind(entity.kind)}) ${entity.label}: ${formatTypes(metaTypes)}`;
-
-    if (entity.types.has(SignatureDefinitionBaseType.Map)) {
-      const records: Record<string, string> = {};
-
-      for (const [key, item] of entity.values) {
-        const metaTypes = item.toMeta().map(SignatureDefinitionTypeMeta.parse);
-        records[key.slice(2)] = formatTypes(metaTypes);
-      }
-
-      label += ' ' + JSON.stringify(records, null, 2);
+    const metaTypes = entity.item.toMeta().map(SignatureDefinitionTypeMeta.parse);
+    const displayName = entity.value
+      ? (entity.value.length > 10 ? `${entity.value.slice(0, 10)}...${entity.value.startsWith('"') ? '"' : ''}` : entity.value)
+      : entity.path;
+    let label = `(${formatKind(entity.completionItemKind)}) ${displayName}: ${formatTypes(metaTypes)}`;
+    const labelBody = createTypeBody(entity.item);
+    
+    if (labelBody) {
+      label += ` ${JSON.stringify(labelBody, null, 2)}`;
     }
 
     hoverText.appendCodeblock(LanguageId, label);
