@@ -1,23 +1,24 @@
 import {
-  SignatureDefinitionFunction,
-  SignatureDefinitionFunctionArg,
-  SignatureDefinitionTypeMeta
-} from 'meta-utils';
-import {
   CompletionItemKind,
+  IClassType,
   IMapType,
   IResolveNamespaceResult,
-  isFunctionType,
-  IType,
-  IClassType,
   isClassType,
+  isFunctionType,
   isMapType,
   isUnionType,
   isUnknownType,
+  IType,
   IUnknownType,
   NIL_TYPE_ID,
   UNKNOWN_TYPE_ID
 } from 'greybel-type-analyzer';
+import {
+  SignatureDefinitionFunction,
+  SignatureDefinitionFunctionArg,
+  SignatureDefinitionTypeMeta
+} from 'meta-utils';
+import { SignatureDefinitionBaseType } from 'meta-utils/dist/types/signature-definition';
 import type {
   Hover,
   ParameterInformation,
@@ -26,7 +27,6 @@ import type {
 
 import { LanguageId } from '../types';
 import { MarkdownString } from './markdown-string';
-import { SignatureDefinitionBaseType } from 'meta-utils/dist/types/signature-definition';
 
 const CompletionItemKindMapping: Record<CompletionItemKind, string> = {
   [CompletionItemKind.Constant]: 'constant',
@@ -68,7 +68,9 @@ export function sortTypes(types: string[]): string[] {
 
 export function formatTypes(types: SignatureDefinitionTypeMeta[]): string {
   if (types == null) return '';
-  return sortTypes(types.map((item) => item.toString().replace(',', '٫'))).join(' or ');
+  return sortTypes(types.map((item) => item.toString().replace(',', '٫'))).join(
+    ' or '
+  );
 }
 
 export function formatDefaultValue(value: number | string): string {
@@ -128,7 +130,9 @@ export const appendTooltipBody = (
   }
 };
 
-export const createSignatureInfo = (entity: IResolveNamespaceResult): SignatureInformation[] => {
+export const createSignatureInfo = (
+  entity: IResolveNamespaceResult
+): SignatureInformation[] => {
   if (!isFunctionType(entity.item) && !isUnionType(entity.item)) return null;
 
   const items = isFunctionType(entity.item)
@@ -192,7 +196,12 @@ export const createTypeBody = (item: IType): Record<string, string> | null => {
   if (isMapType(item) || isUnknownType(item) || isClassType(item)) {
     queue.push(item);
   } else if (isUnionType(item)) {
-    queue.push(...item.variants.filter((it): it is IMapType | IUnknownType | IClassType => isMapType(it) || isUnknownType(it) || isClassType(it)));
+    queue.push(
+      ...item.variants.filter(
+        (it): it is IMapType | IUnknownType | IClassType =>
+          isMapType(it) || isUnknownType(it) || isClassType(it)
+      )
+    );
   }
 
   const records: Map<string, string> = new Map();
@@ -201,7 +210,9 @@ export const createTypeBody = (item: IType): Record<string, string> | null => {
     if (entity.properties == null) continue;
     for (const [key, item] of entity.properties) {
       if (typeof key !== 'string') continue;
-      const metaTypes = item.type.toMeta().map(SignatureDefinitionTypeMeta.parse);
+      const metaTypes = item.type
+        .toMeta()
+        .map(SignatureDefinitionTypeMeta.parse);
       records.set(key, formatTypes(metaTypes));
     }
   }
@@ -210,8 +221,9 @@ export const createTypeBody = (item: IType): Record<string, string> | null => {
     return null;
   }
 
-  const sortedEntries = Array.from(records.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
+  const sortedEntries = Array.from(records.entries()).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
 
   return Object.fromEntries(sortedEntries);
-}
+};

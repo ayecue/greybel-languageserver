@@ -1,9 +1,9 @@
+import { CompletionItem as GreybelCompletionItem } from 'greybel-type-analyzer';
 import {
   ASTBase,
   ASTIndexExpression,
   ASTMemberExpression
 } from 'miniscript-core';
-import { CompletionItem as GreybelCompletionItem } from 'greybel-type-analyzer';
 import type {
   CompletionItem,
   TextDocumentPositionParams

@@ -1,3 +1,4 @@
+import { SymbolInfo } from 'greybel-type-analyzer';
 import type {
   DocumentSymbolParams,
   SymbolInformation,
@@ -6,7 +7,6 @@ import type {
 
 import { getSymbolItemKind } from '../helper/kind';
 import { IActiveDocument, IContext } from '../types';
-import { SymbolInfo } from 'greybel-type-analyzer';
 
 const handleItem = (
   document: IActiveDocument,

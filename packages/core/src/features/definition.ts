@@ -1,3 +1,4 @@
+import { TypeSource } from 'greybel-type-analyzer';
 import {
   ASTBase,
   ASTBaseBlockWithScope,
@@ -13,7 +14,6 @@ import type {
 
 import { LookupHelper } from '../helper/lookup-type';
 import { IContext } from '../types';
-import { TypeSource } from 'greybel-type-analyzer';
 
 const definitionLinkToString = (link: Location): string => {
   return `${link.uri}:${link.range.start.line}:${link.range.start.character}-${link.range.end.line}:${link.range.end.character}`;

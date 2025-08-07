@@ -34,7 +34,7 @@
     "greyscript-transpiler": ">=1.8.2",
     "jest": "^27.4.5",
     "lru-cache": "^11.1.0",
-    "greybel-type-analyzer": ">=1.0.0",
+    "greybel-type-analyzer": ">=1.0.1",
     "fast-toposort": "^0.1.1",
     "mocha": "^10.7.3",
     "non-blocking-schedule": "^0.2.0",

@@ -1,14 +1,17 @@
+import {
+  Document as TypeDocument,
+  EntityInfo,
+  IDocument,
+  ITypeStorage,
+  ListType,
+  MapType,
+  persistTypeInNativeFunction,
+  Type,
+  TypeKind,
+  TypeManager
+} from 'greybel-type-analyzer';
 import { greyscriptMeta } from 'greyscript-meta';
 import { SignatureDefinitionBaseType } from 'meta-utils';
-import {
-  TypeManager,
-  Document as TypeDocument,
-  ITypeStorage,
-  IDocument,
-  persistTypeInNativeFunction,
-  MapType,
-  EntityInfo
-} from 'greybel-type-analyzer';
 
 import {
   DependencyType,
@@ -22,32 +25,65 @@ export type ImportWithNamespace = {
   typeDoc: TypeDocument;
 };
 
-const typeManager = new TypeManager({
-  container: greyscriptMeta,
-  modifyTypeStorage: (document: IDocument, globalTypeStorage: ITypeStorage) => {
-    const generalInterface = document.typeStorage.getTypeById(
-      SignatureDefinitionBaseType.General
-    );
-    
-    if (generalInterface.hasProperty('get_custom_object')) {
-      return;
-    }
+function injectParams(document: IDocument): void {
+  if (document.globals.hasProperty('params')) {
+    return;
+  }
 
-    const gcoMap = MapType.createDefault(
+  document.globals.setProperty(
+    'params',
+    new ListType(
+      document.typeStorage.generateId(TypeKind.ListType),
+      Type.createBaseType(
+        SignatureDefinitionBaseType.Number,
+        document.typeStorage,
+        document,
+        document.globals
+      ),
       document.typeStorage,
       document,
       document.globals
-    );
-    const proxyGCOFn = persistTypeInNativeFunction(
-      SignatureDefinitionBaseType.General,
-      'get_custom_object',
-      gcoMap,
-      document,
-      globalTypeStorage
-    );
+    )
+  );
+}
 
-    generalInterface.setProperty('get_custom_object', new EntityInfo('get_custom_object', proxyGCOFn));
-    document.typeStorage.memory.set('$$get_custom_object', gcoMap);
+function injectGetCustomObject(
+  document: IDocument,
+  globalTypeStorage: ITypeStorage
+): void {
+  const generalInterface = document.typeStorage.getTypeById(
+    SignatureDefinitionBaseType.General
+  );
+
+  if (generalInterface.hasProperty('get_custom_object')) {
+    return;
+  }
+
+  const gcoMap = MapType.createDefault(
+    document.typeStorage,
+    document,
+    document.globals
+  );
+  const proxyGCOFn = persistTypeInNativeFunction(
+    SignatureDefinitionBaseType.General,
+    'get_custom_object',
+    gcoMap,
+    document,
+    globalTypeStorage
+  );
+
+  generalInterface.setProperty(
+    'get_custom_object',
+    new EntityInfo('get_custom_object', proxyGCOFn)
+  );
+  document.typeStorage.memory.set('$$get_custom_object', gcoMap);
+}
+
+const typeManager = new TypeManager({
+  container: greyscriptMeta,
+  modifyTypeStorage: (document: IDocument, globalTypeStorage: ITypeStorage) => {
+    injectParams(document);
+    injectGetCustomObject(document, globalTypeStorage);
   }
 });
 

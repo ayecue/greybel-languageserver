@@ -1,4 +1,11 @@
 import {
+  CompletionItem,
+  Document as TypeDocument,
+  IResolveNamespaceResult,
+  IType,
+  SymbolInfo
+} from 'greybel-type-analyzer';
+import {
   ASTBase,
   ASTBaseBlockWithScope,
   ASTChunk,
@@ -6,19 +13,12 @@ import {
   ASTMemberExpression,
   ASTType
 } from 'miniscript-core';
-import {
-  CompletionItem,
-  Document as TypeDocument,
-  IResolveNamespaceResult,
-  IType
-} from 'greybel-type-analyzer';
 import { Position } from 'vscode-languageserver-textdocument';
 
 import { IActiveDocument, IContext } from '../types';
 import * as ASTScraper from './ast-scraper';
 import { lookupBase } from './ast-utils';
 import { isValidIdentifierLiteral } from './is-valid-identifier-literal';
-import { SymbolInfo } from 'greybel-type-analyzer';
 
 export type LookupOuter = ASTBase[];
 
@@ -69,9 +69,7 @@ export class LookupHelper {
     return context.scope.resolveAllAvailableWithQuery(identifier);
   }
 
-  async findAllAssignmentsOfItem(
-    item: ASTBase
-  ): Promise<IType> {
+  async findAllAssignmentsOfItem(item: ASTBase): Promise<IType> {
     const typeDoc = await this.getTypeMap();
 
     if (typeDoc == null) {
@@ -151,7 +149,7 @@ export class LookupHelper {
     for (let index = 0; index < properties.length; index++) {
       const property = properties[index];
       const sources = property.type.getSource();
-      
+
       if (
         property.type.document != null &&
         property.type.document.name === typeDoc.name &&
@@ -163,7 +161,7 @@ export class LookupHelper {
         alwaysVisibleProperties.push(property);
       }
     }
-    
+
     for (let index = 0; index < alwaysVisibleProperties.length; index++) {
       const property = alwaysVisibleProperties[index];
       result.set(property.name, {
@@ -172,8 +170,10 @@ export class LookupHelper {
       });
     }
 
-    locationDependendProperties
-      .sort((a, b) => a.type.getSource()[0].start.line - b.type.getSource()[0].start.line);
+    locationDependendProperties.sort(
+      (a, b) =>
+        a.type.getSource()[0].start.line - b.type.getSource()[0].start.line
+    );
 
     for (let index = 0; index < locationDependendProperties.length; index++) {
       const property = locationDependendProperties[index];
@@ -291,7 +291,9 @@ export class LookupHelper {
     return typeDoc.resolveNamespace(closest, false);
   }
 
-  async lookupType(position: Position): Promise<IResolveNamespaceResult | null> {
+  async lookupType(
+    position: Position
+  ): Promise<IResolveNamespaceResult | null> {
     const me = this;
     const astResult = await me.lookupAST(position);
 

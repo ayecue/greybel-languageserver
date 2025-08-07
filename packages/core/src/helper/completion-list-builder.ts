@@ -16,9 +16,7 @@ export class CompletionListBuilder {
     this.default = items;
   }
 
-  addCollection(
-    collection: Map<string, GreybelCompletionItem> | null
-  ) {
+  addCollection(collection: Map<string, GreybelCompletionItem> | null) {
     if (collection == null) return;
     this.collection = new Map([...this.collection, ...collection]);
   }

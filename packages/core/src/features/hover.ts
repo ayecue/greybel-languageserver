@@ -2,10 +2,9 @@ import {
   ASTFeatureImportExpression,
   ASTType as ASTTypeExtended
 } from 'greybel-core';
+import { isFunctionType, isUnionType } from 'greybel-type-analyzer';
 import { ASTImportCodeExpression, ASTType } from 'greyscript-core';
-import {
-  SignatureDefinitionTypeMeta
-} from 'meta-utils';
+import { SignatureDefinitionTypeMeta } from 'meta-utils';
 import path from 'path';
 import type { Hover, HoverParams } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -13,9 +12,13 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentURIBuilder } from '../helper/document-manager/document-uri-builder';
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { MarkdownString } from '../helper/markdown-string';
-import { createHover, createTypeBody, formatKind, formatTypes } from '../helper/tooltip';
+import {
+  createHover,
+  createTypeBody,
+  formatKind,
+  formatTypes
+} from '../helper/tooltip';
 import { IContext, LanguageId } from '../types';
-import { isFunctionType, isUnionType } from 'greybel-type-analyzer';
 
 export function activate(context: IContext) {
   async function generateImportCodeHover(
@@ -122,18 +125,25 @@ export function activate(context: IContext) {
       return;
     }
 
-    if (isFunctionType(entity.item) || (isUnionType(entity.item) && entity.item.variants.some(isFunctionType))) {
+    if (
+      isFunctionType(entity.item) ||
+      (isUnionType(entity.item) && entity.item.variants.some(isFunctionType))
+    ) {
       return createHover(entity);
     }
 
     const hoverText = new MarkdownString('');
-    const metaTypes = entity.item.toMeta().map(SignatureDefinitionTypeMeta.parse);
+    const metaTypes = entity.item
+      .toMeta()
+      .map(SignatureDefinitionTypeMeta.parse);
     const displayName = entity.value
-      ? (entity.value.length > 10 ? `${entity.value.slice(0, 10)}...${entity.value.startsWith('"') ? '"' : ''}` : entity.value)
+      ? entity.value.length > 10
+        ? `${entity.value.slice(0, 10)}...${entity.value.startsWith('"') ? '"' : ''}`
+        : entity.value
       : entity.path;
     let label = `(${formatKind(entity.completionItemKind)}) ${displayName}: ${formatTypes(metaTypes)}`;
     const labelBody = createTypeBody(entity.item);
-    
+
     if (labelBody) {
       label += ` ${JSON.stringify(labelBody, null, 2)}`;
     }

@@ -1,10 +1,10 @@
+import { isFunctionType, isUnionType } from 'greybel-type-analyzer';
 import { ASTBase, ASTCallExpression, ASTType } from 'miniscript-core';
 import type { SignatureHelp, SignatureHelpParams } from 'vscode-languageserver';
 
 import { LookupASTResult, LookupHelper } from '../helper/lookup-type';
 import { createSignatureInfo } from '../helper/tooltip';
 import { IContext } from '../types';
-import { isFunctionType, isUnionType } from 'greybel-type-analyzer';
 
 const getClosestCallExpression = (
   astResult: LookupASTResult
@@ -59,10 +59,9 @@ export function activate(context: IContext) {
 
     if (
       !entity ||
-      (
-        !isFunctionType(entity.item) &&
-        (!isUnionType(entity.item) || !entity.item.variants.some(isFunctionType))
-      )
+      (!isFunctionType(entity.item) &&
+        (!isUnionType(entity.item) ||
+          !entity.item.variants.some(isFunctionType)))
     ) {
       return;
     }
