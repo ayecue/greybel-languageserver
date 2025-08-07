@@ -1,9 +1,9 @@
-import { Document as TypeDocument } from "miniscript-type-analyzer";
+import { Document as TypeDocument } from "greybel-type-analyzer";
 
 import { IActiveDocument, IContext, IDocumentMerger } from "../../types";
 import { DocumentMergerCache } from "./document-merger-cache";
 import { toposort } from "fast-toposort";
-import { aggregateImportsWithNamespaceFromLocations, createTypeDocumentWithNamespaces } from "../type-manager";
+import { aggregateImportsWithNamespaceFromLocations } from "../type-manager";
 import { DocumentWorkspaceBuilder, DocumentWorkspaceContext } from "../document-manager/document-workspace-builder";
 
 export class DocumentWorkspaceMergerJob {
@@ -28,10 +28,9 @@ export class DocumentWorkspaceMergerJob {
       }
 
       const mergedTypeDoc = activeDocument.typeDocument.merge(
-        createTypeDocumentWithNamespaces(
-          activeDocument.typeDocument,
-          namespacesOfImports
-        )
+        ...namespacesOfImports.map((it) => {
+          return { document: it.typeDoc, namespaces: [{ exportFrom: 'module.exports', namespace: it.namespace }] }
+        })
       );
       return mergedTypeDoc;
     }
@@ -100,11 +99,12 @@ export class DocumentWorkspaceMergerJob {
     );
 
     const mergedTypeDoc = document.typeDocument.merge(
-      createTypeDocumentWithNamespaces(
-        document.typeDocument,
-        namespacesOfImports
-      ),
-      ...externalTypeDocs
+      ...namespacesOfImports.map((it) => {
+        return { document: it.typeDoc, namespaces: [{ exportFrom: 'module.exports', namespace: it.namespace }] }
+      }),
+      ...externalTypeDocs.map((it) => {
+        return { document: it };
+      })
     );
     this.cache.typeDocuments.set(cacheKey, mergedTypeDoc);
     return mergedTypeDoc;

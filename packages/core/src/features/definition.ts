@@ -1,3 +1,4 @@
+import { TypeSource } from 'greybel-type-analyzer';
 import {
   ASTBase,
   ASTBaseBlockWithScope,
@@ -5,7 +6,6 @@ import {
   ASTMemberExpression,
   ASTType
 } from 'miniscript-core';
-import { ASTDefinitionItem } from 'miniscript-type-analyzer';
 import type {
   DefinitionParams,
   Location,
@@ -19,8 +19,8 @@ const definitionLinkToString = (link: Location): string => {
   return `${link.uri}:${link.range.start.line}:${link.range.start.character}-${link.range.end.line}:${link.range.end.character}`;
 };
 
-const getLocation = (item: ASTDefinitionItem): Location => {
-  const node = item.node;
+const getLocation = (item: TypeSource): Location => {
+  const node = item.astRef;
   let start: Position;
   let end: Position;
 
@@ -50,28 +50,37 @@ const getLocation = (item: ASTDefinitionItem): Location => {
   }
 
   return {
-    uri: item.source,
+    uri: item.document,
     range: { start, end }
   };
 };
 
 const findAllDefinitions = async (
   helper: LookupHelper,
-  item: ASTBase,
-  root: ASTBaseBlockWithScope
+  item: ASTBase
 ): Promise<Location[]> => {
-  const assignments = await helper.findAllAssignmentsOfItem(item, root);
+  const result = await helper.findAllAssignmentsOfItem(item);
+  const sources = result?.getSource();
+
+  if (sources == null || sources.length === 0) {
+    return [];
+  }
+
   const definitions: Location[] = [];
   const visited = new Set<string>();
 
-  for (const assignment of assignments) {
-    const node = assignment.node;
+  for (const source of sources) {
+    const node = source.astRef;
+
+    if (node == null) {
+      continue;
+    }
 
     if (!node.start || !node.end) {
       continue;
     }
 
-    const definitionLink: Location = getLocation(assignment);
+    const definitionLink: Location = getLocation(source);
     const linkString = definitionLinkToString(definitionLink);
 
     if (visited.has(linkString)) {
@@ -115,6 +124,6 @@ export function activate(context: IContext) {
       }
     }
 
-    return await findAllDefinitions(helper, target, target.scope!);
+    return await findAllDefinitions(helper, target);
   });
 }

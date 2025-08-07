@@ -1,4 +1,4 @@
-import { CompletionItemKind as EntityCompletionItemKind } from 'miniscript-type-analyzer';
+import { CompletionItemKind as EntityCompletionItemKind } from 'greybel-type-analyzer';
 import type { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
 
 const CompletionItemKindMapping: Record<

@@ -1,4 +1,4 @@
-import { IActiveDocument, IContext, IDependencyLocation, IDocumentManager } from "../../types";
+import { IActiveDocument, IContext, IDependencyLocation } from "../../types";
 
 export class DocumentWorkspaceContext {
   readonly documents: IActiveDocument[];

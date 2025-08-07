@@ -1,3 +1,4 @@
+import { isFunctionType, isUnionType } from 'greybel-type-analyzer';
 import { ASTBase, ASTCallExpression, ASTType } from 'miniscript-core';
 import type { SignatureHelp, SignatureHelpParams } from 'vscode-languageserver';
 
@@ -51,12 +52,17 @@ export function activate(context: IContext) {
       return;
     }
 
-    const item = await helper.lookupTypeInfo({
+    const entity = await helper.lookupTypeInfo({
       closest: closestCallExpr.base,
       outer: closest.scope ? [closest.scope] : []
     });
 
-    if (!item || !item.isCallable()) {
+    if (
+      !entity ||
+      (!isFunctionType(entity.item) &&
+        (!isUnionType(entity.item) ||
+          !entity.item.variants.some(isFunctionType)))
+    ) {
       return;
     }
 
@@ -78,7 +84,7 @@ export function activate(context: IContext) {
       activeSignature: 0
     };
 
-    signatureHelp.signatures.push(...createSignatureInfo(item));
+    signatureHelp.signatures.push(...createSignatureInfo(entity));
 
     return signatureHelp;
   });

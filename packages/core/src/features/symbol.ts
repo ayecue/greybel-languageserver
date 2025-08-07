@@ -1,12 +1,4 @@
-import {
-  ASTAssignmentStatement,
-  ASTForGenericStatement,
-  ASTType
-} from 'miniscript-core';
-import {
-  ASTDefinitionItem,
-  createExpressionId
-} from 'miniscript-type-analyzer';
+import { SymbolInfo } from 'greybel-type-analyzer';
 import type {
   DocumentSymbolParams,
   SymbolInformation,
@@ -18,47 +10,34 @@ import { IActiveDocument, IContext } from '../types';
 
 const handleItem = (
   document: IActiveDocument,
-  item: ASTAssignmentStatement | ASTForGenericStatement
-): SymbolInformation | null => {
-  const entity = document.typeDocument.resolveNamespace(item.variable, true);
-
-  if (entity == null) {
-    return null;
+  item: SymbolInfo
+): SymbolInformation[] => {
+  if (item.source == null) {
+    return [];
   }
 
-  const label = createExpressionId(item.variable);
-  const kind = entity?.kind ? getSymbolItemKind(entity.kind) : 13; // SymbolKind.Variable
+  const kind = item.kind ? getSymbolItemKind(item.kind) : 13; // SymbolKind.Variable
 
-  const start = {
-    line: item.variable.start.line - 1,
-    character: item.variable.start.character - 1
-  };
-  const end = {
-    line: item.variable.end.line - 1,
-    character: item.variable.end.character - 1
-  };
+  for (const source of item.source) {
+    const start = {
+      line: source.start.line - 1,
+      character: source.start.character - 1
+    };
+    const end = {
+      line: source.end.line - 1,
+      character: source.end.character - 1
+    };
 
-  return {
-    name: label,
-    kind,
-    location: {
-      uri: document.textDocument.uri,
-      range: { start, end }
-    }
-  };
-};
-
-const handleDefinitionItem = (
-  document: IActiveDocument,
-  item: ASTDefinitionItem
-): SymbolInformation | null => {
-  switch (item.node.type) {
-    case ASTType.AssignmentStatement:
-      return handleItem(document, item.node as ASTAssignmentStatement);
-    case ASTType.ForGenericStatement:
-      return handleItem(document, item.node as ASTForGenericStatement);
-    default:
-      return null;
+    return [
+      {
+        name: item.name,
+        kind,
+        location: {
+          uri: document.textDocument.uri,
+          range: { start, end }
+        }
+      }
+    ];
   }
 };
 
@@ -71,11 +50,7 @@ const findAllAssignments = (
   const result: SymbolInformation[] = [];
 
   for (const defItem of defs) {
-    const symbol = handleDefinitionItem(document, defItem);
-
-    if (symbol != null) {
-      result.push(symbol);
-    }
+    result.push(...handleItem(document, defItem));
   }
 
   return result;

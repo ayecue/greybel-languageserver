@@ -1,5 +1,5 @@
 import { LRUCache as LRU } from 'lru-cache';
-import { Document as TypeDocument } from 'miniscript-type-analyzer';
+import { Document as TypeDocument } from 'greybel-type-analyzer';
 
 import { IActiveDocument } from '../../types';
 import { hash } from '../hash';

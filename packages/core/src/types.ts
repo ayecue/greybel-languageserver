@@ -9,7 +9,7 @@ import type { LRUCache as LRU } from 'lru-cache';
 import type { ASTBaseBlockWithScope } from 'miniscript-core';
 import {
   Document as TypeDocument
-} from 'miniscript-type-analyzer';
+} from 'greybel-type-analyzer';
 
 export type LanguageId = 'greyscript';
 export const LanguageId: LanguageId = 'greyscript';

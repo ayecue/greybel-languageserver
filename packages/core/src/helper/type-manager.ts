@@ -1,10 +1,17 @@
-import { ASTChunkGreyScript } from 'greyscript-core';
-import { greyscriptMeta } from 'greyscript-meta';
-import { ASTPosition } from 'miniscript-core';
 import {
   Document as TypeDocument,
+  EntityInfo,
+  IDocument,
+  ITypeStorage,
+  ListType,
+  MapType,
+  persistTypeInNativeFunction,
+  Type,
+  TypeKind,
   TypeManager
-} from 'miniscript-type-analyzer';
+} from 'greybel-type-analyzer';
+import { greyscriptMeta } from 'greyscript-meta';
+import { SignatureDefinitionBaseType } from 'meta-utils';
 
 import {
   DependencyType,
@@ -18,43 +25,69 @@ export type ImportWithNamespace = {
   typeDoc: TypeDocument;
 };
 
+function injectParams(document: IDocument): void {
+  if (document.globals.hasProperty('params')) {
+    return;
+  }
+
+  document.globals.setProperty(
+    'params',
+    new ListType(
+      document.typeStorage.generateId(TypeKind.ListType),
+      Type.createBaseType(
+        SignatureDefinitionBaseType.Number,
+        document.typeStorage,
+        document,
+        document.globals
+      ),
+      document.typeStorage,
+      document,
+      document.globals
+    )
+  );
+}
+
+function injectGetCustomObject(
+  document: IDocument,
+  globalTypeStorage: ITypeStorage
+): void {
+  const generalInterface = document.typeStorage.getTypeById(
+    SignatureDefinitionBaseType.General
+  );
+
+  if (generalInterface.hasProperty('get_custom_object')) {
+    return;
+  }
+
+  const gcoMap = MapType.createDefault(
+    document.typeStorage,
+    document,
+    document.globals
+  );
+  const proxyGCOFn = persistTypeInNativeFunction(
+    SignatureDefinitionBaseType.General,
+    'get_custom_object',
+    gcoMap,
+    document,
+    globalTypeStorage
+  );
+
+  generalInterface.setProperty(
+    'get_custom_object',
+    new EntityInfo('get_custom_object', proxyGCOFn)
+  );
+  document.typeStorage.memory.set('$$get_custom_object', gcoMap);
+}
+
 const typeManager = new TypeManager({
-  container: greyscriptMeta
+  container: greyscriptMeta,
+  modifyTypeStorage: (document: IDocument, globalTypeStorage: ITypeStorage) => {
+    injectParams(document);
+    injectGetCustomObject(document, globalTypeStorage);
+  }
 });
 
 export default typeManager;
-
-export function createTypeDocumentWithNamespaces(
-  origin: TypeDocument,
-  items: ImportWithNamespace[]
-) {
-  const typeDoc = new TypeDocument({
-    source: origin.source,
-    // @ts-expect-error
-    container: typeManager._container,
-    root: new ASTChunkGreyScript({
-      start: new ASTPosition(0, 0),
-      end: new ASTPosition(0, 0),
-      range: [0, 0]
-    })
-  });
-
-  typeDoc.analyze();
-
-  items.forEach((item) => {
-    const entity = item.typeDoc
-      .getRootScopeContext()
-      .scope.resolveNamespace('module', true)
-      ?.resolveProperty('exports', true);
-
-    if (entity == null) return;
-
-    const rootScope = typeDoc.getRootScopeContext().scope;
-    rootScope.setProperty(item.namespace, entity, true);
-  });
-
-  return typeDoc;
-}
 
 export function aggregateImportsWithNamespaceFromLocations(
   dependencyLocation: IDependencyLocation[],

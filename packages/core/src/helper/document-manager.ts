@@ -107,6 +107,7 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
         this.processAndPersist(textDocument)
       );
     } catch (err) {
+      console.error(`Error opening document ${target}:`, err);
       return null;
     } finally {
       this._pendingFiles.delete(target);
