@@ -17,6 +17,7 @@ const handleItem = (
   }
 
   const kind = item.kind ? getSymbolItemKind(item.kind) : 13; // SymbolKind.Variable
+  const result: SymbolInformation[] = [];
 
   for (const source of item.source) {
     const start = {
@@ -28,7 +29,7 @@ const handleItem = (
       character: source.end.character - 1
     };
 
-    return [
+    result.push(
       {
         name: item.name,
         kind,
@@ -37,8 +38,10 @@ const handleItem = (
           range: { start, end }
         }
       }
-    ];
+    );
   }
+
+  return result;
 };
 
 const findAllAssignments = (
