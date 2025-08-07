@@ -73,7 +73,7 @@
     "greyscript-core": ">=2.5.5",
     "greyscript-meta": ">=4.3.2",
     "greyscript-transpiler": ">=1.8.2",
-    "greybel-type-analyzer": ">=1.0.1"
+    "greybel-type-analyzer": ">=1.0.2"
   },
   "dependencies": {
     "color-convert": "^2.0.1",
