@@ -35,7 +35,7 @@ function injectParams(document: IDocument): void {
     new ListType(
       document.typeStorage.generateId(TypeKind.ListType),
       Type.createBaseType(
-        SignatureDefinitionBaseType.Number,
+        SignatureDefinitionBaseType.String,
         document.typeStorage,
         document,
         document.globals
