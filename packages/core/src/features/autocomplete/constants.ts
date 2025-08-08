@@ -1,13 +1,9 @@
-import type { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+import type { CompletionItem } from 'vscode-languageserver';
 
 export const AVAILABLE_CONSTANTS: CompletionItem[] = [
   'true',
   'false',
-  'null',
-  'params',
-  'globals',
-  'locals',
-  'outer'
+  'null'
 ].map((item: string) => {
   return {
     label: item,
