@@ -339,8 +339,8 @@ Bar.moo = ""
 // I am **bold**
 // @description Alternative description
 // @example test("title", 123)
-// @param {string} title - The title of the book.
-// @param {string|number} author - The author of the book.
+// @param {string} test - The title of the book.
+// @param {string|number} abc - The author of the book.
 // @return {Bar} - Some info about return
 Bar.test = function(test, abc)
   print "test"
