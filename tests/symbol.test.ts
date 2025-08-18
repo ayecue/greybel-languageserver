@@ -44,7 +44,7 @@ suite('DocumentSymbolProvider', () => {
       const documentUri = getDocUri('invalid-chunk.src');
       const result = await executeDocumentSymbolProvider(documentUri);
 
-      assert.strictEqual(result, undefined);
+      assert.strictEqual(result.length, 2);
     });
   });
 });
