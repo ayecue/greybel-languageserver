@@ -179,6 +179,11 @@ export const createHover = (entity: IResolveNamespaceResult): Hover => {
     const text = new MarkdownString('');
     const fnDef = item.signature as SignatureDefinitionFunction;
 
+    // Skip functions without description
+    if (fnDef.getDescription() == null) {
+      continue;
+    }
+
     appendTooltipHeader(text, entity, fnDef);
     appendTooltipBody(text, fnDef);
 
