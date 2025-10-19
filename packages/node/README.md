@@ -164,46 +164,37 @@ You should now have `greybel-languageserver` set up and ready to use with Intell
 
 #### nvim
 
-1. Add the following configuration to your `init.vim`:
-```vim
-" Install vim-plug if it's not already installed
-call plug#begin('~/.vim/plugged')
-
-" Install LSP config plugin
-Plug 'neovim/nvim-lspconfig'
-
-call plug#end()
-
-" LSP configuration for greybel-languageserver
-lua <<EOF
-  local configs = require'lspconfig.configs'
-  local lspconfig = require'lspconfig'
-
-  -- Enable debug-level logging
-  vim.lsp.set_log_level("debug")
-
-  if not configs.greybel then
-    configs.greybel = {
-      default_config = {
-        cmd = { "greybel-languageserver", "--stdio" },
-        filetypes = { "greyscript" },
-        root_dir = lspconfig.util.root_pattern(".git", vim.fn.getcwd()),
-        settings = {},
-        on_attach = function(client, bufnr)           -- Optional on_attach function
-          -- Set up hover keybinding here
-          vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', { noremap = true, silent = true })
-        end,
-      },
+1. Add the following configuration to your `init.lua`:
+```lua
+-- LSP configuration for greybel-languageserver
+vim.lsp.config("greybel", {
+  cmd = { "greybel-languageserver", "--stdio" },
+  filetypes = { "greyscript" },
+  root_dir = vim.fs.root(0, { ".git" }),
+  settings = {
+    greybel = {
+      transpiler = {
+        beautify = {
+          indentation = "Whitespace",
+          indentationSpaces = 4
+        }
+      }
     }
-  end
+  }
+})
 
-  -- Register and start the greybel LSP
-  lspconfig.greybel.setup{}
-EOF
+-- Start the greybel LSP
+vim.lsp.enable("greybel")
 
-autocmd BufRead,BufNewFile *.src set filetype=greyscript
+-- Create an autocmd for a new filetype and other buffer-local configurations
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = "*.src",
+  callback = function()
+    vim.bo.filetype = "greyscript"
+    vim.keymap.set("n", "gq", vim.lsp.buf.format, { buffer = true })
+  end,
+})
 ```
-2. Don't forget to run :PlugInstall to install the necessary plugins.
 
 This configuration ensures that greybel-languageserver will be properly integrated into Neovim, and that .src files will be recognized with the correct syntax highlighting and LSP features.
 
