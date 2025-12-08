@@ -15,3 +15,4 @@ tsconfig.json
 .eslintrc
 .circleci
 build-browser.cjs
+.vscode
