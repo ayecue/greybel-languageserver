@@ -20,12 +20,12 @@ async function lookupErrors(
       return {
         range: {
           start: {
-            line: range.start.line - 1,
-            character: range.start.character - 1
+            line: range.start[0] - 1,
+            character: range.start[1] - 1
           },
           end: {
-            line: range.end.line - 1,
-            character: range.end.character - 1
+            line: range.end[0] - 1,
+            character: range.end[1] - 1
           }
         },
         message: err.message,
@@ -35,8 +35,14 @@ async function lookupErrors(
 
     return {
       range: {
-        start: activeDocument.parsedPayload.start,
-        end: activeDocument.parsedPayload.end
+        start: {
+          line: activeDocument.parsedPayload.startLine - 1,
+          character: activeDocument.parsedPayload.startChar - 1
+        },
+        end: {
+          line: activeDocument.parsedPayload.endLine - 1,
+          character: activeDocument.parsedPayload.endChar - 1
+        }
       },
       message: err.message,
       severity: 1 // Error

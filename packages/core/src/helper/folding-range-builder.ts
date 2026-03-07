@@ -8,16 +8,9 @@ import { ScraperWalker } from './ast-scraper';
 export function buildFoldingRanges(item: IActiveDocument): FoldingRange[] {
   const ranges: FoldingRange[] = [];
   const walker = new ScraperWalker((item: ASTBase, level: number) => {
-    if (item.start.line === item.end.line) return null;
+    if (item.startLine === item.endLine) return null;
 
     switch (item.type) {
-      case ASTType.Comment:
-        ranges.push({
-          startLine: item.start.line - 1,
-          endLine: item.end.line - 1,
-          kind: FoldingRangeKind.Comment
-        });
-        return null;
       case ASTType.MapConstructorExpression:
       case ASTType.ListConstructorExpression:
       case ASTType.StringLiteral:
@@ -25,8 +18,8 @@ export function buildFoldingRanges(item: IActiveDocument): FoldingRange[] {
       case ASTType.ForGenericStatement:
       case ASTType.FunctionDeclaration: {
         ranges.push({
-          startLine: item.start.line - 1,
-          endLine: item.end.line - 1,
+          startLine: item.startLine - 1,
+          endLine: item.endLine - 1,
           kind: FoldingRangeKind.Region
         });
         return null;
@@ -35,8 +28,8 @@ export function buildFoldingRanges(item: IActiveDocument): FoldingRange[] {
       case ASTType.ElseifClause:
       case ASTType.ElseClause: {
         ranges.push({
-          startLine: item.start.line - 1,
-          endLine: item.end.line - 2,
+          startLine: item.startLine - 1,
+          endLine: item.endLine - 2,
           kind: FoldingRangeKind.Region
         });
         return null;

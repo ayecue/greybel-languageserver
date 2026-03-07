@@ -16,8 +16,6 @@ const handleItem = (
     return [];
   }
 
-  console.log('handleItem', item.name, item.kind, item.source.length);
-
   const kind = item.kind ? getSymbolItemKind(item.kind) : 13; // SymbolKind.Variable
   const result: SymbolInformation[] = [];
 

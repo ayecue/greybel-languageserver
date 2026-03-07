@@ -4,7 +4,7 @@ import { Operator } from 'miniscript-core';
 
 export const AVAILABLE_OPERATORS: CompletionItem[] = [
   Operator.Plus,
-  Operator.Asterik,
+  Operator.Asterisk,
   Operator.Minus,
   Operator.Slash,
   Operator.Power,
