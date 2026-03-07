@@ -192,7 +192,7 @@ export class LookupHelper {
   async lookupAST(position: Position): Promise<LookupASTResult | null> {
     const me = this;
     const chunk = me.document.parsedPayload as ASTChunk;
-    const lineItems = chunk.lines[position.line + 1];
+    const lineItems = chunk.lines.get(position.line + 1);
 
     if (!lineItems) {
       return null;
