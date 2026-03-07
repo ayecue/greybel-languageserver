@@ -2,30 +2,20 @@
 
 [![greybel-languageserver](https://circleci.com/gh/ayecue/greybel-languageserver.svg?style=svg)](https://circleci.com/gh/ayecue/greybel-languageserver)
 
-greybel-languageserver` is a Language Server for GreyScript that offers a variety of features, including:
-
-- Auto-completion
-- Hover tooltips
-- Syntax highlighting and more
-
-This language server is compatible with any client that follows the [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide). 
-
-For an example of how it integrates with a popular editor, take a look at the [examples](#example-implementations).
+A [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) implementation for [GreyScript](https://github.com/ayecue/greybel-js) (the [Grey Hack](https://store.steampowered.com/app/605230/Grey_Hack/) flavour of MiniScript). Compatible with any editor that supports the LSP standard.
 
 ## Supported Providers
 
-`greybel-languageserver` supports the following language server protocol (LSP) features:
-
-- **Completion**: Auto-completion suggestions for code.
-- **Hover**: Displays information about a symbol when you hover over it.
-- **Color**: Color information for syntax highlighting and theming.
-- **Definition**: Navigate to the definition of a symbol.
-- **Formatter**: Automatically format the code according to set rules.
-- **Signature Help**: Shows function or method signatures while typing.
-- **Document Symbol**: Lists all symbols in a document (e.g., functions, classes).
-- **Workspace Symbol**: Search for symbols across the workspace.
-- **Diagnostic**: Provides error, warning, and information diagnostics.
-- **Semantic Tokens**: Enhanced token classification for syntax highlighting and analysis.
+- **Completion** - auto-completion suggestions
+- **Hover** - symbol information on hover
+- **Color** - color information for syntax highlighting and theming
+- **Definition** - navigate to a symbol's definition
+- **Formatter** - automatic code formatting
+- **Signature Help** - function/method signature display
+- **Document Symbol** - list all symbols in a document
+- **Workspace Symbol** - search symbols across the workspace
+- **Diagnostic** - error, warning, and info diagnostics
+- **Semantic Tokens** - enhanced token classification for highlighting
 
 ## Install
 
@@ -34,11 +24,13 @@ npm install -g greybel-languageserver
 ```
 
 ## Usage
+
 ```bash
-greybel-languageserver
+greybel-languageserver --stdio
 ```
 
 ## Configuration
+
 ```ts
 {
   fileExtensions: string; // default: "gs,ms,src"
@@ -60,257 +52,21 @@ greybel-languageserver
 }
 ```
 
-## Example Implementations
+## Editor Setup
 
-This section provides a collection of IDEs that implement the `greybel-languageserver`.
+Detailed setup instructions for each editor are in the [setup/](setup/) folder:
 
-- [VSCode](#vscode): Visual Studio Code setup for `greybel-languageserver`.
-- [Sublime Text](#sublime): Instructions for integrating with Sublime Text.
-- [IntelliJ](#intellij): Guide for using `greybel-languageserver` with IntelliJ.
-- [Neovim (nvim)](#nvim): Configuration for Neovim users.
-- [Visual Studio](#visual-studio): Learn how to set up a Visual Studio extension using LSP to add support for the GreyScript language in Visual Studio.
+| Editor | Guide |
+|--------|-------|
+| VSCode | [setup/vscode.md](setup/vscode.md) |
+| Sublime Text | [setup/sublime.md](setup/sublime.md) |
+| IntelliJ | [setup/intellij.md](setup/intellij.md) |
+| Neovim | [setup/neovim.md](setup/neovim.md) |
+| Visual Studio | [setup/visual-studio.md](setup/visual-studio.md) |
+| Zed | [setup/zed.md](setup/zed.md) |
+| BBEdit | [setup/bbedit.md](setup/bbedit.md) |
 
-Any other IDEs that follow the [LSP standards](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide) should also work with `greybel-languageserver`.
-
-#### VSCode
-
-1. Create language client file.
-```ts
-import * as path from 'path';
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  TransportKind
-} from 'vscode-languageclient/node';
-
-const serverModule = context.asAbsolutePath(
-  path.join('node_modules', 'greybel-languageserver', 'index.js')
-);
-
-const serverOptions: ServerOptions = {
-  run: { module: serverModule, transport: TransportKind.ipc }
-};
-
-const clientOptions: LanguageClientOptions = {
-  documentSelector: [{ scheme: 'file', language: 'greyscript' }],
-  synchronize: {
-    fileEvents: workspace.createFileSystemWatcher('**/*')
-  },
-  diagnosticCollectionName: 'greyscript'
-};
-
-const client = new LanguageClient(
-  'languageServerExample',
-  'Language Server Example',
-  serverOptions,
-  clientOptions
-);
-
-client.registerProposedFeatures();
-client.start();
-```
-
-#### Sublime
-
-1. Install the [LSP Package](https://lsp.sublimetext.io/) from the Sublime Text Package Control.
-2. Create the following LSP client configuration in your Sublime settings:
-```json
-{
-  "show_diagnostics_panel_on_save": 0,
-  "clients": {
-    "greyscript": {
-      "enabled": true,
-      "command": ["greybel-languageserver", "--stdio"],
-      "selector": "source.greyscript"
-    }
-  },
-  "semantic_highlighting": true
-}
-```
-
-3. Create a Sublime syntax file for greyscript. The highlighting will be provided via the semantic provider, so there's no need to add additional patterns here. Use the following configuration:
-```yaml
-%YAML 1.2
----
-name: greyscript
-file_extensions:
-  - src
-scope: source.greyscript
-
-contexts:
-  main:
-    - match: '.+'
-      scope: text.greyscript
-```
-
-#### IntelliJ
-
-To set up `greybel-languageserver` in IntelliJ, follow these steps:
-
-1. [Install greybel-languageserver](#install).
-2. Install the `LSP4IJ` plugin from the JetBrains Plugin Marketplace.
-3. Go to **Languages & Frameworks > Language Servers**.
-4. Click the "+" icon to add a new language server configuration.
-5. In the **Name** field, enter `greyscript`.
-6. In the **Command** field, enter `greybel-languageserver --stdio`.
-7. In the **Filename Patterns** section:
-   - Set **File Name Pattern** to `*.src`.
-   - Set **Language Id** to `greyscript`.
-8. Restart IntelliJ.
-
-You should now have `greybel-languageserver` set up and ready to use with IntelliJ.
-
-
-#### nvim
-
-1. Add the following configuration to your `init.lua`:
-```lua
--- LSP configuration for greybel-languageserver
-vim.lsp.config("greybel", {
-  cmd = { "greybel-languageserver", "--stdio" },
-  filetypes = { "greyscript" },
-  root_dir = vim.fs.root(0, { ".git" }),
-  settings = {
-    greybel = {
-      transpiler = {
-        beautify = {
-          indentation = "Whitespace",
-          indentationSpaces = 4
-        }
-      }
-    }
-  }
-})
-
--- Start the greybel LSP
-vim.lsp.enable("greybel")
-
--- Create an autocmd for a new filetype and other buffer-local configurations
-vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-  pattern = "*.src",
-  callback = function()
-    vim.bo.filetype = "greyscript"
-    vim.keymap.set("n", "gq", vim.lsp.buf.format, { buffer = true })
-  end,
-})
-```
-
-This configuration ensures that greybel-languageserver will be properly integrated into Neovim, and that .src files will be recognized with the correct syntax highlighting and LSP features.
-
-#### Visual Studio
-
-1. Begin by following the [official Visual Studio Extensibility Tutorial](https://learn.microsoft.com/de-de/visualstudio/extensibility/adding-an-lsp-extension?view=vs-2022#get-started) to create a new Visual Studio extension. This will set up the basic structure for the extension project.
-2. In this step, we define a custom content type for the language we are adding (e.g., GreyScript). This will help Visual Studio identify files based on their extension or content type. Create a new class called ContentTypeDefinitions.cs:
-```csharp
-using Microsoft.VisualStudio.LanguageServer.Client;
-using Microsoft.VisualStudio.Utilities;
-using System.ComponentModel.Composition;
-
-namespace GreyScript
-{
-    internal static class GreyScriptContentDefinition
-    {
-        [Export]
-        [Name("greyscript")]
-        [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]
-        public static ContentTypeDefinition GreyScriptContentTypeDefinition;
-
-        [Export]
-        [FileExtension(".ms")]
-        [ContentType("greyscript")]
-        public static FileExtensionToContentTypeDefinition GreyScriptFileExtensionDefinition;
-    }
-}
-```
-3. Next, you will create the LanguageClient.cs class that connects Visual Studio to the language server. This class implements ILanguageClient, which is essential for interacting with the LSP. Create a new file called LanguageClient.cs:
-```csharp
-using Microsoft.VisualStudio.LanguageServer.Client;
-using Microsoft.VisualStudio.Threading;
-using Microsoft.VisualStudio.Utilities;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace GreyScript
-{
-    [Export(typeof(ILanguageClient))]
-    [ContentType("greyscript")]
-    [RunOnContext(RunningContext.RunOnHost)]
-    public class GreyScriptLanguageClient : ILanguageClient
-    {
-        public event AsyncEventHandler<EventArgs> StartAsync;
-        public event AsyncEventHandler<EventArgs> StopAsync;
-        public object InitializationOptions => null;
-        public IEnumerable<string> FilesToWatch => null;
-        public bool ShowNotificationOnInitializeFailed => true;
-        public string Name => "GreyScript Language Client";
-        public IEnumerable<string> ConfigurationSections => new[] { "greyscript" };
-
-        public Task<Connection> ActivateAsync(CancellationToken token)
-        {
-            var info = new ProcessStartInfo
-            {
-                FileName = @"C:\Users\myUser\AppData\Roaming\npm\greybel-languageserver.cmd",
-                Arguments = "--stdio",
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            var process = new Process { StartInfo = info };
-
-            if (process.Start())
-            {
-                Debug.WriteLine("Language server started successfully.");
-                return Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
-            }
-
-            Debug.WriteLine("Failed to start language server.");
-            return Task.FromResult<Connection>(null);
-        }
-
-        public async Task OnLoadedAsync()
-        {
-            if (StartAsync != null)
-            {
-                await StartAsync.InvokeAsync(this, EventArgs.Empty);
-            }
-        }
-
-        public async Task StopServerAsync()
-        {
-            if (StopAsync != null)
-            {
-                await StopAsync.InvokeAsync(this, EventArgs.Empty);
-            }
-        }
-
-        public Task OnServerInitializedAsync()
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task<InitializationFailureContext> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
-        {
-            string message = "GreyScript failed to activate, now we can't test LSP! :(";
-            string exception = initializationState.InitializationException?.ToString() ?? string.Empty;
-            message = $"{message}\n {exception}";
-
-            var failureContext = new InitializationFailureContext()
-            {
-                FailureMessage = message,
-            };
-
-            return Task.FromResult(failureContext);
-        }
-    }
-}
-```
-4. At this point, you have a basic framework for integrating a custom language server into Visual Studio. You can customize the content type, server activation, or extend the language client.
+Any other editor that follows the [LSP standard](https://microsoft.github.io/language-server-protocol/) should also work.
 
 ## How to Add Tooltips
 
@@ -319,7 +75,8 @@ Tooltips in `greybel-languageserver` can help provide additional context, such a
 1. Fork and create a pull request (PR) with your changes to the [greyscript-meta repository](https://github.com/ayecue/greyscript-meta), where the meta descriptions are stored.
 2. Once your changes are merged, create a separate PR in this repository to update the version of `greybel-languageserver` to include the new meta descriptions.
 
-Additionally, you can define method-specific tooltips directly in the code using comments. This allows for quick, tooltips for individual methods.
+Additionally, you can define method-specific tooltips directly in the code using comments:
+
 ```js
 // @type Bar
 // @property {string} virtualMoo
