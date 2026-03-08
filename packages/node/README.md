@@ -38,6 +38,7 @@ greybel-languageserver --stdio
   autocomplete: boolean; // default: true
   hoverdocs: boolean; // default: true
   diagnostic: boolean; // default: true
+  strictMode: boolean; // default: false
   transpiler: {
     beautify: {
       keepParentheses: boolean; // default: true
