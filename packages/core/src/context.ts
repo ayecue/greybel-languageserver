@@ -31,6 +31,7 @@ function createConfig(preset?: IConfigurationRequest): IConfiguration {
     autocomplete: preset?.autocomplete ?? true,
     hoverdocs: preset?.hoverdocs ?? true,
     diagnostic: preset?.diagnostic ?? true,
+    strictMode: preset?.strictMode ?? false,
     transpiler: {
       beautify: {
         keepParentheses: preset?.transpiler?.beautify?.keepParentheses ?? true,

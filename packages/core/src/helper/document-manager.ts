@@ -59,8 +59,10 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
     this._context.documentMerger.cache.flushCacheKey(textDocument.uri);
 
     const content = textDocument.getText();
+    const config = this._context.getConfiguration();
     const parser = new UnsafeParser(content, {
       preserve: true,
+      strictMode: config.strictMode,
     });
     const parsedPayload = parser.parseChunk() as ASTChunkGreyScript;
     const typeDocument = typeManager.analyze(textDocument.uri, parsedPayload);
