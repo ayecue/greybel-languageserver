@@ -74,7 +74,7 @@
   },
   "dependencies": {
     "glob": "^11.0.0",
-    "greybel-languageserver-core": "~3.0.0",
+    "greybel-languageserver-core": "~3.0.1",
     "greyscript-core": "~3.0.0",
     "greyscript-meta": "~4.4.7",
     "greyscript-transpiler": "~2.0.0",

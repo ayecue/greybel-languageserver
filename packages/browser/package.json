@@ -74,6 +74,6 @@
     "greyscript-meta": "~4.4.7",
     "greyscript-transpiler": "~2.0.0",
     "greybel-type-analyzer": "~2.0.0",
-    "greybel-languageserver-core": "~3.0.0"
+    "greybel-languageserver-core": "~3.0.1"
   }
 }
