@@ -28,23 +28,23 @@ const getLocation = (item: TypeSource): Location => {
     case ASTType.ForGenericStatement: {
       const stmt = node as ASTForGenericStatement;
       start = {
-        line: stmt.variable.start.line - 1,
-        character: stmt.variable.start.character - 1
+        line: stmt.variable.startLine - 1,
+        character: stmt.variable.startChar - 1
       };
       end = {
-        line: stmt.variable.end.line - 1,
-        character: stmt.variable.end.character - 1
+        line: stmt.variable.endLine - 1,
+        character: stmt.variable.endChar - 1
       };
       break;
     }
     default: {
       start = {
-        line: node.start.line - 1,
-        character: node.start.character - 1
+        line: node.startLine - 1,
+        character: node.startChar - 1
       };
       end = {
-        line: node.end.line - 1,
-        character: node.end.character - 1
+        line: node.endLine - 1,
+        character: node.endChar - 1
       };
     }
   }
@@ -73,10 +73,6 @@ const findAllDefinitions = async (
     const node = source.astRef;
 
     if (node == null) {
-      continue;
-    }
-
-    if (!node.start || !node.end) {
       continue;
     }
 

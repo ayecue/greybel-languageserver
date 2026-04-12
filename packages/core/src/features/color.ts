@@ -3,7 +3,6 @@ import {
   ASTBase,
   ASTChunk,
   ASTLiteral,
-  ASTPosition,
   ASTType
 } from 'miniscript-core';
 import type {
@@ -81,24 +80,26 @@ export function activate(context: IContext) {
       match,
       markup,
       value,
-      astPosition,
+      astStartLine,
+      astStartChar,
       lineIndex
     }: {
       match: RegExpExecArray;
       markup: string;
       value: string;
-      astPosition: ASTPosition;
+      astStartLine: number;
+      astStartChar: number;
       lineIndex: number;
     }): Range => {
       const colorStartIndex = match.index + markup.indexOf('=') + 1;
       const colorEndIndex = colorStartIndex + value.length;
-      const line = astPosition.line - 1 + lineIndex;
+      const line = astStartLine - 1 + lineIndex;
       let start = colorStartIndex;
       let end = colorEndIndex;
 
       if (lineIndex === 0) {
-        start += astPosition.character;
-        end += astPosition.character;
+        start += astStartChar;
+        end += astStartChar;
       }
 
       const colorStart: Position = {
@@ -119,9 +120,6 @@ export function activate(context: IContext) {
     for (let index = 0; index < allAvailableStrings.length; index++) {
       const strLiteral = allAvailableStrings[index];
 
-      if (!strLiteral.start) continue;
-
-      const start = strLiteral.start;
       const lines = strLiteral.value.toString().split('\n');
 
       for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
@@ -135,7 +133,8 @@ export function activate(context: IContext) {
             match,
             markup,
             value,
-            astPosition: start,
+            astStartLine: strLiteral.startLine,
+            astStartChar: strLiteral.startChar,
             lineIndex
           });
 

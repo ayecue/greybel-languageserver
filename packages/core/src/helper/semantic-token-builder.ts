@@ -3,11 +3,12 @@ import {
   SelectorGroups as GreybelSelectorGroups,
   Selectors as GreybelSelectors
 } from 'greybel-core';
-import { GreyScriptKeyword, Lexer } from 'greyscript-core';
+import { GreyScriptKeyword, UnsafeLexer } from 'greyscript-core';
 import { isNative } from 'greyscript-meta';
 import {
   ASTType,
   Keyword,
+  Lexer,
   LiteralToken,
   Operator,
   Selector,
@@ -138,8 +139,8 @@ export class TokenHandler {
   ) {
     if (lines.length > 1) {
       this._builder.push(
-        token.start.line - 1,
-        token.start.character - 1,
+        token.line - 1,
+        token.startChar - 1,
         lines[0].length,
         type,
         0
@@ -147,7 +148,7 @@ export class TokenHandler {
 
       for (let offset = 1; offset < lines.length; offset++) {
         this._builder.push(
-          token.start.line + offset - 1,
+          token.line + offset - 1,
           0,
           lines[offset].length,
           type,
@@ -156,8 +157,8 @@ export class TokenHandler {
       }
     } else {
       this._builder.push(
-        token.start.line - 1,
-        token.start.character - 1,
+        token.line - 1,
+        token.startChar - 1,
         lines[0].length,
         type,
         0
@@ -171,8 +172,8 @@ export class TokenHandler {
     if (!SelectorGroups.BlockEndOfLine(me.token)) {
       if (!me.consume(Selectors.LParenthesis)) return;
       me._builder.push(
-        me.previousToken.start.line - 1,
-        me.previousToken.start.character - 1,
+        me.previousToken.line - 1,
+        me.previousToken.startChar - 1,
         me.previousToken.value.length,
         SemanticTokenType.Punctuator,
         0
@@ -184,8 +185,8 @@ export class TokenHandler {
         }
 
         me._builder.push(
-          me.token.start.line - 1,
-          me.token.start.character - 1,
+          me.token.line - 1,
+          me.token.startChar - 1,
           me.token.value.length,
           SemanticTokenType.Parameter,
           0
@@ -194,15 +195,15 @@ export class TokenHandler {
 
         if (me.consume(Selectors.Assign)) {
           me._builder.push(
-            me.previousToken.start.line - 1,
-            me.previousToken.start.character - 1,
+            me.previousToken.line - 1,
+            me.previousToken.startChar - 1,
             me.previousToken.value.length,
             SemanticTokenType.Operator,
             0
           );
 
           while (
-            !Selectors.ArgumentSeperator(me.token) &&
+            !Selectors.ArgumentSeparator(me.token) &&
             !Selectors.RParenthesis(me.token) &&
             !Selectors.EndOfLine(me.token)
           ) {
@@ -211,10 +212,10 @@ export class TokenHandler {
         }
 
         if (!Selectors.RParenthesis(me.token)) {
-          if (!Selectors.ArgumentSeperator(me.token)) return;
+          if (!Selectors.ArgumentSeparator(me.token)) return;
           me._builder.push(
-            me.token.start.line - 1,
-            me.token.start.character - 1,
+            me.token.line - 1,
+            me.token.startChar - 1,
             me.token.value.length,
             SemanticTokenType.Punctuator,
             0
@@ -225,8 +226,8 @@ export class TokenHandler {
 
       if (me.consume(Selectors.RParenthesis)) {
         me._builder.push(
-          me.previousToken.start.line - 1,
-          me.previousToken.start.character - 1,
+          me.previousToken.line - 1,
+          me.previousToken.startChar - 1,
           me.previousToken.value.length,
           SemanticTokenType.Punctuator,
           0
@@ -238,11 +239,11 @@ export class TokenHandler {
   private processPathSegment() {
     const me = this;
 
-    if (this.token.type === ASTType.StringLiteral) {
+    if (this.token.type === TokenType.StringLiteral) {
       const token = this.token as LiteralToken;
       me._builder.push(
-        token.start.line - 1,
-        token.start.character - 1,
+        token.line - 1,
+        token.startChar - 1,
         token.raw.length,
         SemanticTokenType.String,
         0
@@ -255,8 +256,8 @@ export class TokenHandler {
 
     while (!GreybelSelectorGroups.PathSegmentEnd(me.token)) {
       me._builder.push(
-        me.token.start.line - 1,
-        me.token.start.character - 1,
+        me.token.line - 1,
+        me.token.startChar - 1,
         me.token.value.length,
         SemanticTokenType.String,
         0
@@ -267,8 +268,8 @@ export class TokenHandler {
 
     if (me.consumeMany(GreybelSelectorGroups.PathSegmentEnd)) {
       me._builder.push(
-        me.previousToken.start.line - 1,
-        me.previousToken.start.character - 1,
+        me.previousToken.line - 1,
+        me.previousToken.startChar - 1,
         me.previousToken.value.length,
         SemanticTokenType.Punctuator,
         0
@@ -286,8 +287,8 @@ export class TokenHandler {
     }
 
     me._builder.push(
-      me.token.start.line - 1,
-      me.token.start.character - 1,
+      me.token.line - 1,
+      me.token.startChar - 1,
       me.token.value.length,
       SemanticTokenType.String,
       0
@@ -308,8 +309,8 @@ export class TokenHandler {
     }
 
     me._builder.push(
-      me.token.start.line - 1,
-      me.token.start.character - 1,
+      me.token.line - 1,
+      me.token.startChar - 1,
       me.token.value.length,
       SemanticTokenType.Variable,
       0
@@ -321,8 +322,8 @@ export class TokenHandler {
     }
 
     me._builder.push(
-      me.previousToken.start.line - 1,
-      me.previousToken.start.character - 1,
+      me.previousToken.line - 1,
+      me.previousToken.startChar - 1,
       me.previousToken.value.length,
       SemanticTokenType.Keyword,
       0
@@ -343,8 +344,8 @@ export class TokenHandler {
     }
 
     me._builder.push(
-      me.previousToken.start.line - 1,
-      me.previousToken.start.character - 1,
+      me.previousToken.line - 1,
+      me.previousToken.startChar - 1,
       me.previousToken.value.length,
       SemanticTokenType.Punctuator,
       0
@@ -355,18 +356,18 @@ export class TokenHandler {
     }
 
     me._builder.push(
-      me.token.start.line - 1,
-      me.token.start.character - 1,
-      me.token.raw.length,
+      me.token.line - 1,
+      me.token.startChar - 1,
+      (me.token as LiteralToken).raw.length,
       SemanticTokenType.String,
       0
     );
     me.next();
 
-    if (me.consume(Selectors.ImportCodeSeperator)) {
+    if (me.consume(Selectors.ImportCodeSeparator)) {
       me._builder.push(
-        me.previousToken.start.line - 1,
-        me.previousToken.start.character - 1,
+        me.previousToken.line - 1,
+        me.previousToken.startChar - 1,
         me.previousToken.value.length,
         SemanticTokenType.Punctuator,
         0
@@ -378,8 +379,8 @@ export class TokenHandler {
 
       const token = me.token as LiteralToken;
       me._builder.push(
-        token.start.line - 1,
-        token.start.character - 1,
+        token.line - 1,
+        token.startChar - 1,
         token.raw.length,
         SemanticTokenType.String,
         0
@@ -393,8 +394,8 @@ export class TokenHandler {
     }
 
     me._builder.push(
-      me.previousToken.start.line - 1,
-      me.previousToken.start.character - 1,
+      me.previousToken.line - 1,
+      me.previousToken.startChar - 1,
       me.previousToken.value.length,
       SemanticTokenType.Punctuator,
       0
@@ -405,8 +406,8 @@ export class TokenHandler {
     const token = this.token;
 
     this._builder.push(
-      token.start.line - 1,
-      token.start.character - 1,
+      token.line - 1,
+      token.startChar - 1,
       token.value.length,
       SemanticTokenType.Keyword,
       0
@@ -458,8 +459,8 @@ export class TokenHandler {
   private processNumericLiteral() {
     const token = this.token as LiteralToken;
     this._builder.push(
-      token.start.line - 1,
-      token.start.character - 1,
+      token.line - 1,
+      token.startChar - 1,
       token.raw.length,
       SemanticTokenType.Number,
       0
@@ -470,8 +471,8 @@ export class TokenHandler {
   private processBooleanLiteral() {
     const token = this.token as LiteralToken;
     this._builder.push(
-      token.start.line - 1,
-      token.start.character - 1,
+      token.line - 1,
+      token.startChar - 1,
       token.raw.length,
       SemanticTokenType.Constant,
       0
@@ -482,8 +483,8 @@ export class TokenHandler {
   private processNilLiteral() {
     const token = this.token as LiteralToken;
     this._builder.push(
-      token.start.line - 1,
-      token.start.character - 1,
+      token.line - 1,
+      token.startChar - 1,
       token.raw.length,
       SemanticTokenType.Constant,
       0
@@ -494,15 +495,15 @@ export class TokenHandler {
   private processIdentifier() {
     const token = this.token;
 
-    if (Selectors.MemberSeperator(this.previousToken)) {
+    if (Selectors.MemberSeparator(this.previousToken)) {
       const isNativeIdentifier = isNative(['any'], token.value);
       const modifier = isNativeIdentifier
         ? getSingularModifier(SemanticTokenModifier.DefaultLibrary)
         : 0;
 
       this._builder.push(
-        token.start.line - 1,
-        token.start.character - 1,
+        token.line - 1,
+        token.startChar - 1,
         token.value.length,
         SemanticTokenType.Property,
         modifier
@@ -517,8 +518,8 @@ export class TokenHandler {
       : 0;
 
     this._builder.push(
-      token.start.line - 1,
-      token.start.character - 1,
+      token.line - 1,
+      token.startChar - 1,
       token.value.length,
       SemanticTokenType.Variable,
       modifier
@@ -531,7 +532,7 @@ export class TokenHandler {
 
     switch (token.value) {
       case Operator.Plus:
-      case Operator.Asterik:
+      case Operator.Asterisk:
       case Operator.Minus:
       case Operator.Slash:
       case Operator.Power:
@@ -551,8 +552,8 @@ export class TokenHandler {
       case Operator.PowerShorthand:
       case Operator.Reference: {
         this._builder.push(
-          token.start.line - 1,
-          token.start.character - 1,
+          token.line - 1,
+          token.startChar - 1,
           token.value.length,
           SemanticTokenType.Operator,
           0
@@ -561,8 +562,8 @@ export class TokenHandler {
       }
       default: {
         this._builder.push(
-          token.start.line - 1,
-          token.start.character - 1,
+          token.line - 1,
+          token.startChar - 1,
           token.value.length,
           SemanticTokenType.Punctuator,
           0
@@ -649,9 +650,7 @@ export function buildTokens(
   builder: SemanticTokensBuilder,
   document: IActiveDocument
 ): SemanticTokensBuilder {
-  const lexer = new Lexer(document.textDocument.getText(), {
-    unsafe: true
-  });
+  const lexer = new UnsafeLexer(document.textDocument.getText());
   const handler = new TokenHandler(lexer, builder);
   handler.digest();
   return builder;

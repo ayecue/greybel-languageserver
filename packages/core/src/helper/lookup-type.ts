@@ -179,7 +179,7 @@ export class LookupHelper {
       const property = locationDependendProperties[index];
       const source = property.type.getSource()[0];
 
-      if (source.start.line >= item.end!.line) break;
+      if (source.start.line >= item.endLine) break;
       result.set(property.name, {
         kind: property.kind,
         line: source.start.line - 1
@@ -192,7 +192,7 @@ export class LookupHelper {
   async lookupAST(position: Position): Promise<LookupASTResult | null> {
     const me = this;
     const chunk = me.document.parsedPayload as ASTChunk;
-    const lineItems = chunk.lines[position.line + 1];
+    const lineItems = chunk.lines.get(position.line + 1);
 
     if (!lineItems) {
       return null;
@@ -201,10 +201,10 @@ export class LookupHelper {
     for (let index = 0; index < lineItems.length; index++) {
       const lineItem = lineItems[index];
       const outer = ASTScraper.findEx((item: ASTBase, _level: number) => {
-        const startLine = item.start!.line - 1;
-        const startCharacter = item.start!.character - 1;
-        const endLine = item.end!.line - 1;
-        const endCharacter = item.end!.character - 1;
+        const startLine = item.startLine - 1;
+        const startCharacter = item.startChar - 1;
+        const endLine = item.endLine - 1;
+        const endCharacter = item.endChar - 1;
 
         if (startLine > position.line) {
           return {

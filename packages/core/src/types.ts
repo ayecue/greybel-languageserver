@@ -33,6 +33,7 @@ export interface IConfigurationRequest {
   autocomplete: boolean;
   hoverdocs: boolean;
   diagnostic: boolean;
+  strictMode: boolean;
   transpiler: {
     beautify: {
       keepParentheses: boolean;
@@ -52,6 +53,7 @@ export interface IConfiguration {
   autocomplete: boolean;
   hoverdocs: boolean;
   diagnostic: boolean;
+  strictMode: boolean;
   transpiler: {
     beautify: {
       keepParentheses: boolean;

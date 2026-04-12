@@ -69,8 +69,8 @@ export function activate(context: IContext) {
     // figure out argument position
     const astArgs = closestCallExpr.arguments;
     const selectedIndex = astArgs.findIndex((argItem: ASTBase) => {
-      const leftIndex = argItem.start!.character - 1;
-      const rightIndex = argItem.end!.character;
+      const leftIndex = argItem.startChar - 1;
+      const rightIndex = argItem.endChar;
 
       return (
         leftIndex <= params.position.character &&

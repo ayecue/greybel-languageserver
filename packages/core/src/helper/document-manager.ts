@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { ASTChunkGreyScript, Parser } from 'greyscript-core';
+import { ASTChunkGreyScript, UnsafeParser } from 'greyscript-core';
 import { LRUCache as LRU } from 'lru-cache';
 import { schedule } from 'non-blocking-schedule';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -59,8 +59,10 @@ export class DocumentManager extends EventEmitter implements IDocumentManager {
     this._context.documentMerger.cache.flushCacheKey(textDocument.uri);
 
     const content = textDocument.getText();
-    const parser = new Parser(content, {
-      unsafe: true
+    const config = this._context.getConfiguration();
+    const parser = new UnsafeParser(content, {
+      preserve: true,
+      strictMode: config.strictMode,
     });
     const parsedPayload = parser.parseChunk() as ASTChunkGreyScript;
     const typeDocument = typeManager.analyze(textDocument.uri, parsedPayload);
